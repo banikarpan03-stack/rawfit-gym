@@ -29,8 +29,7 @@ function getDb() {
 async function initDatabase() {
   if (isPostgres) {
     const { pool } = getDb();
-    const dropResult = await pool.query("DROP TABLE IF EXISTS exercises CASCADE");
-    console.log("DROP exercises result:", dropResult.command);
+    const dropResult = console.log("DROP exercises result:", dropResult.command);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -274,13 +273,13 @@ async function seedDatabase(db) {
       ];
       for (const p of pkgs) await pool.query("INSERT INTO packages (id, name, duration, price, description) VALUES ($1,$2,$3,$4,$5)", p);
     }
-    const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
-    console.log("Exercises count:", exCount);
+    const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
     if (exCount === 0) {
       const fs = require("fs");
       const path = require("path");
       const exDir = path.join(__dirname, "..", "public", "exercises");
       if (fs.existsSync(exDir)) {
+        const allExercises = [];
         const categories = fs.readdirSync(exDir).filter(f => fs.statSync(path.join(exDir, f)).isDirectory());
         for (const cat of categories) {
           const catDir = path.join(exDir, cat);
@@ -288,16 +287,24 @@ async function seedDatabase(db) {
           for (const t of thumbs) {
             const slug = t.replace(".thumb.webp", "");
             const name = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-            const gifUrl = "/exercises/" + cat + "/" + t;
-            const id = uuidv4();
-            await pool.query("INSERT INTO exercises (id, name, category, difficulty, muscleGroup, gifUrl) VALUES ($1,$2,$3,$4,$5,$6)", [id, name, cat, "beginner", cat, gifUrl]);
+            allExercises.push([uuidv4(), name, cat, "beginner", cat, "/exercises/" + cat + "/" + t]);
           }
         }
+        for (let i = 0; i < allExercises.length; i += 200) {
+          const batch = allExercises.slice(i, i + 200);
+          const vals = [];
+          const phs = [];
+          let p = 1;
+          for (const e of batch) {
+            phs.push("($"+(p++)+",$"+(p++)+",$"+(p++)+",$"+(p++)+",$"+(p++)+",$"+(p++)+")");
+            vals.push(...e);
+          }
+          await pool.query("INSERT INTO exercises (id,name,category,difficulty,muscleGroup,gifUrl) VALUES " + phs.join(","), vals);
+        }
+        console.log("Exercises seeded: " + allExercises.length + " from " + categories.length + " categories");
       }
-      console.log("Exercises seeded from filesystem!");
-        console.log("Total categories:", categories.length);
     }
-    const dtCount = (await pool.query("SELECT COUNT(*) as c FROM diet_templates")).rows[0].c;
+        const dtCount = (await pool.query("SELECT COUNT(*) as c FROM diet_templates")).rows[0].c;
     if (dtCount === 0) {
       const templates = [
         ["Weight Loss Plan", 1500, JSON.stringify([{ time: "7:00 AM", name: "Oatmeal with fruits", calories: 300, items: ["Oats", "Banana", "Honey", "Milk"] }, { time: "10:00 AM", name: "Mid-morning snack", calories: 150, items: ["Apple", "Almonds"] }, { time: "1:00 PM", name: "Lunch", calories: 450, items: ["Brown rice", "Grilled chicken", "Salad", "Dal"] }, { time: "4:00 PM", name: "Pre-workout", calories: 150, items: ["Banana", "Protein shake"] }, { time: "7:00 PM", name: "Dinner", calories: 350, items: ["Roti", "Vegetables", "Paneer"] }, { time: "9:00 PM", name: "Before bed", calories: 100, items: ["Warm milk", "Turmeric"] }]), "Low calorie diet for weight loss"],
