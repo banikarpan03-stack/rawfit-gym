@@ -29,7 +29,8 @@ function getDb() {
 async function initDatabase() {
   if (isPostgres) {
     const { pool } = getDb();
-    await pool.query("DROP TABLE IF EXISTS exercises CASCADE");
+    const dropResult = await pool.query("DROP TABLE IF EXISTS exercises CASCADE");
+    console.log("DROP exercises result:", dropResult.command);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -273,7 +274,8 @@ async function seedDatabase(db) {
       ];
       for (const p of pkgs) await pool.query("INSERT INTO packages (id, name, duration, price, description) VALUES ($1,$2,$3,$4,$5)", p);
     }
-    const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
+    const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
+    console.log("Exercises count:", exCount);
     if (exCount === 0) {
       const fs = require("fs");
       const path = require("path");
@@ -292,7 +294,8 @@ async function seedDatabase(db) {
           }
         }
       }
-      console.log("Exercises seeded from filesystem!");
+      console.log("Exercises seeded from filesystem!");
+        console.log("Total categories:", categories.length);
     }
     const dtCount = (await pool.query("SELECT COUNT(*) as c FROM diet_templates")).rows[0].c;
     if (dtCount === 0) {
