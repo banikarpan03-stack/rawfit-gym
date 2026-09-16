@@ -11,7 +11,9 @@ const PORT = process.env.PORT || process.env.LIGHTNING_STUDIO_PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "rawfit-gym-secret-2024";
 const GYM_LAT = 22.944691;
 const GYM_LON = 88.5377882;
-const GYM_RADIUS = 100;
+const GYM_RADIUS = 100;
+
+const NOW = isPostgres ? "NOW()::text" : "datetime('now')";
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
@@ -123,7 +125,7 @@ app.get("/api/dashboard", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
     const totalMembers = (await dbGet("SELECT COUNT(*) as c FROM users WHERE role = 'MEMBER'")).c;
-    const activeMembers = (await dbGet("SELECT COUNT(*) as c FROM users WHERE role = 'MEMBER' AND endDate >= datetime('now')")).c;
+    const activeMembers = (await dbGet(`SELECT COUNT(*) as c FROM users WHERE role = 'MEMBER' AND endDate >= ${NOW}`)).c;
     const todayAttendance = (await dbGet("SELECT COUNT(*) as c FROM attendance WHERE date(checkIn) = ?", [today])).c;
     const revenue = (await dbGet("SELECT COALESCE(SUM(amount), 0) as total FROM payments")).total;
     const recentMembers = await dbAll("SELECT id, name, uniqueCode, createdAt FROM users WHERE role = 'MEMBER' ORDER BY createdAt DESC LIMIT 5");
@@ -156,7 +158,7 @@ app.put("/api/members/:id", async (req, res) => {
     const keys = Object.keys(fields);
     const sets = keys.map((k, i) => `${k} = ${isPostgres ? `$${i + 1}` : "?"}`).join(", ");
     const vals = Object.values(fields);
-    await dbRun(`UPDATE users SET ${sets}, updatedAt = datetime('now') WHERE id = ${isPostgres ? `$${keys.length + 1}` : "?"}`, [...vals, req.params.id]);
+    await dbRun(`UPDATE users SET ${sets}, updatedAt = ${NOW} WHERE id = ${isPostgres ? `$${keys.length + 1}` : "?"}`, [...vals, req.params.id]);
     res.json({ message: "Updated" });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -238,7 +240,7 @@ app.post("/api/attendance/checkout", async (req, res) => {
     const { memberId } = req.body;
     const open = await dbGet("SELECT id FROM attendance WHERE memberId = ? AND checkOut IS NULL", [memberId]);
     if (!open) return res.status(404).json({ error: "No open check-in" });
-    await dbRun("UPDATE attendance SET checkOut = datetime('now') WHERE id = ?", [open.id]);
+    await dbRun(`UPDATE attendance SET checkOut = ${NOW} WHERE id = ?`, [open.id]);
     const attendance = await dbGet("SELECT * FROM attendance WHERE id = ?", [open.id]);
     res.json({ attendance });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -336,7 +338,7 @@ app.put("/api/charts/:id", async (req, res) => {
     const history = JSON.parse(existing.history || "[]");
     history.push({ content: existing.content, updatedAt: new Date().toISOString() });
     const contentStr = typeof content === "string" ? content : JSON.stringify(content);
-    await dbRun("UPDATE member_charts SET content = ?, history = ?, endDate = ?, updatedAt = datetime('now') WHERE id = ?", [contentStr, JSON.stringify(history), endDate || existing.endDate, req.params.id]);
+    await dbRun(`UPDATE member_charts SET content = ?, history = ?, endDate = ?, updatedAt = ${NOW} WHERE id = ?`, [contentStr, JSON.stringify(history), endDate || existing.endDate, req.params.id]);
     res.json({ message: "Updated" });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -393,9 +395,11 @@ app.get("/api/gps-check", (req, res) => {
 // ── Auto-checkout (4 hours) ──────────────────────
 async function autoCheckout() {
   try {
-    const stale = await dbAll("SELECT a.id, a.memberId, u.name FROM attendance a JOIN users u ON a.memberId = u.id WHERE a.checkOut IS NULL AND datetime(a.checkIn, '+4 hours') < datetime('now')");
+    const stale = await dbAll(isPostgres
+      ? `SELECT a.id, a.memberId, u.name FROM attendance a JOIN users u ON a.memberId = u.id WHERE a.checkOut IS NULL AND (a.checkIn::timestamp + interval '4 hours')::text < ${NOW}`
+      : `SELECT a.id, a.memberId, u.name FROM attendance a JOIN users u ON a.memberId = u.id WHERE a.checkOut IS NULL AND datetime(a.checkIn, '+4 hours') < ${NOW}`);
     for (const record of stale) {
-      await dbRun("UPDATE attendance SET checkOut = datetime('now') WHERE id = ?", [record.id]);
+      await dbRun(`UPDATE attendance SET checkOut = ${NOW} WHERE id = ?`, [record.id]);
       const nid = uuidv4();
       await dbRun("INSERT INTO notifications (id, memberId, message, type) VALUES (?, ?, ?, 'auto_checkout')", [nid, record.memberId, "Auto-checked out after 4 hours. Please check in again if you are still at the gym."]);
     }

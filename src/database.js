@@ -4,11 +4,15 @@ const { v4: uuidv4 } = require("uuid");
 const DATABASE_URL = process.env.DATABASE_URL;
 const isPostgres = !!DATABASE_URL;
 
+let _pgPool = null;
+
 function getDb() {
   if (isPostgres) {
-    const { Pool } = require("pg");
-    const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
-    return { pool, query: (text, params) => pool.query(text, params) };
+    if (!_pgPool) {
+      const { Pool } = require("pg");
+      _pgPool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    }
+    return { pool: _pgPool, query: (text, params) => _pgPool.query(text, params) };
   }
   const Database = require("better-sqlite3");
   const path = require("path");
@@ -45,8 +49,8 @@ async function initDatabase() {
         extraDays INTEGER DEFAULT 0,
         totalAmount REAL,
         packageId TEXT,
-        createdAt TEXT DEFAULT (datetime('now')),
-        updatedAt TEXT DEFAULT (datetime('now')),
+        createdAt TEXT DEFAULT (NOW()),
+        updatedAt TEXT DEFAULT (NOW()),
         FOREIGN KEY (packageId) REFERENCES packages(id)
       );
 
@@ -57,17 +61,17 @@ async function initDatabase() {
         price REAL NOT NULL,
         description TEXT,
         isActive INTEGER DEFAULT 1,
-        createdAt TEXT DEFAULT (datetime('now'))
+        createdAt TEXT DEFAULT (NOW())
       );
 
       CREATE TABLE IF NOT EXISTS attendance (
         id TEXT PRIMARY KEY,
         memberId TEXT NOT NULL,
-        checkIn TEXT DEFAULT (datetime('now')),
+        checkIn TEXT DEFAULT (NOW()),
         checkOut TEXT,
         isManual INTEGER DEFAULT 0,
         markedBy TEXT,
-        createdAt TEXT DEFAULT (datetime('now')),
+        createdAt TEXT DEFAULT (NOW()),
         FOREIGN KEY (memberId) REFERENCES users(id)
       );
 
@@ -77,9 +81,10 @@ async function initDatabase() {
         category TEXT NOT NULL,
         description TEXT,
         videoUrl TEXT,
+        gifUrl TEXT,
         difficulty TEXT DEFAULT 'beginner',
         muscleGroup TEXT,
-        createdAt TEXT DEFAULT (datetime('now'))
+        createdAt TEXT DEFAULT (NOW())
       );
 
       CREATE TABLE IF NOT EXISTS diet_templates (
@@ -88,7 +93,7 @@ async function initDatabase() {
         targetCalories INTEGER,
         meals TEXT,
         description TEXT,
-        createdAt TEXT DEFAULT (datetime('now'))
+        createdAt TEXT DEFAULT (NOW())
       );
 
       CREATE TABLE IF NOT EXISTS workout_templates (
@@ -97,7 +102,7 @@ async function initDatabase() {
         exercises TEXT,
         difficulty TEXT,
         description TEXT,
-        createdAt TEXT DEFAULT (datetime('now'))
+        createdAt TEXT DEFAULT (NOW())
       );
 
       CREATE TABLE IF NOT EXISTS member_charts (
@@ -108,8 +113,8 @@ async function initDatabase() {
         startDate TEXT,
         endDate TEXT,
         history TEXT DEFAULT '[]',
-        createdAt TEXT DEFAULT (datetime('now')),
-        updatedAt TEXT DEFAULT (datetime('now')),
+        createdAt TEXT DEFAULT (NOW()),
+        updatedAt TEXT DEFAULT (NOW()),
         FOREIGN KEY (memberId) REFERENCES users(id)
       );
 
@@ -119,7 +124,7 @@ async function initDatabase() {
         message TEXT NOT NULL,
         type TEXT,
         isRead INTEGER DEFAULT 0,
-        createdAt TEXT DEFAULT (datetime('now')),
+        createdAt TEXT DEFAULT (NOW()),
         FOREIGN KEY (memberId) REFERENCES users(id)
       );
 
@@ -129,7 +134,7 @@ async function initDatabase() {
         amount REAL NOT NULL,
         method TEXT,
         notes TEXT,
-        date TEXT DEFAULT (datetime('now')),
+        date TEXT DEFAULT (NOW()),
         FOREIGN KEY (memberId) REFERENCES users(id)
       );
     `);
@@ -299,9 +304,9 @@ async function seedDatabase(db) {
     const dtCount = (await pool.query("SELECT COUNT(*) as c FROM diet_templates")).rows[0].c;
     if (dtCount === 0) {
       const templates = [
-        ["Weight Loss Plan", 1500, "Low calorie diet for weight loss", JSON.stringify([{ time: "7:00 AM", name: "Oatmeal with fruits", calories: 300, items: ["Oats", "Banana", "Honey", "Milk"] }, { time: "10:00 AM", name: "Mid-morning snack", calories: 150, items: ["Apple", "Almonds"] }, { time: "1:00 PM", name: "Lunch", calories: 450, items: ["Brown rice", "Grilled chicken", "Salad", "Dal"] }, { time: "4:00 PM", name: "Pre-workout", calories: 150, items: ["Banana", "Protein shake"] }, { time: "7:00 PM", name: "Dinner", calories: 350, items: ["Roti", "Vegetables", "Paneer"] }, { time: "9:00 PM", name: "Before bed", calories: 100, items: ["Warm milk", "Turmeric"] }])],
-        ["Muscle Gain Plan", 2500, "High protein diet for muscle building", JSON.stringify([{ time: "6:00 AM", name: "Early breakfast", calories: 400, items: ["Eggs (4)", "Whole wheat toast", "Banana"] }, { time: "9:00 AM", name: "Post-workout", calories: 400, items: ["Protein shake", "Oats", "Peanut butter"] }, { time: "12:00 PM", name: "Lunch", calories: 600, items: ["Rice", "Chicken breast", "Vegetables", "Dal"] }, { time: "3:00 PM", name: "Snack", calories: 300, items: ["Greek yogurt", "Mixed nuts", "Fruits"] }, { time: "6:00 PM", name: "Pre-workout", calories: 200, items: ["Banana", "Black coffee"] }, { time: "8:00 PM", name: "Dinner", calories: 500, items: ["Roti", "Fish/Paneer", "Vegetables", "Salad"] }, { time: "10:00 PM", name: "Before bed", calories: 100, items: ["Casein protein", "Milk"] }])],
-        ["Maintenance Plan", 2000, "Balanced diet for maintaining weight", JSON.stringify([{ time: "7:00 AM", name: "Breakfast", calories: 400, items: ["Poha/Upma", "Eggs", "Fruits"] }, { time: "10:00 AM", name: "Snack", calories: 200, items: ["Nuts", "Green tea"] }, { time: "1:00 PM", name: "Lunch", calories: 500, items: ["Rice", "Dal", "Vegetables", "Curd"] }, { time: "4:00 PM", name: "Evening snack", calories: 200, items: ["Sprouts", "Fruits"] }, { time: "7:00 PM", name: "Dinner", calories: 500, items: ["Roti", "Paneer/Chicken", "Salad"] }, { time: "9:00 PM", name: "Before bed", calories: 200, items: ["Milk", "Dry fruits"] }])],
+        ["Weight Loss Plan", 1500, JSON.stringify([{ time: "7:00 AM", name: "Oatmeal with fruits", calories: 300, items: ["Oats", "Banana", "Honey", "Milk"] }, { time: "10:00 AM", name: "Mid-morning snack", calories: 150, items: ["Apple", "Almonds"] }, { time: "1:00 PM", name: "Lunch", calories: 450, items: ["Brown rice", "Grilled chicken", "Salad", "Dal"] }, { time: "4:00 PM", name: "Pre-workout", calories: 150, items: ["Banana", "Protein shake"] }, { time: "7:00 PM", name: "Dinner", calories: 350, items: ["Roti", "Vegetables", "Paneer"] }, { time: "9:00 PM", name: "Before bed", calories: 100, items: ["Warm milk", "Turmeric"] }]), "Low calorie diet for weight loss"],
+        ["Muscle Gain Plan", 2500, JSON.stringify([{ time: "6:00 AM", name: "Early breakfast", calories: 400, items: ["Eggs (4)", "Whole wheat toast", "Banana"] }, { time: "9:00 AM", name: "Post-workout", calories: 400, items: ["Protein shake", "Oats", "Peanut butter"] }, { time: "12:00 PM", name: "Lunch", calories: 600, items: ["Rice", "Chicken breast", "Vegetables", "Dal"] }, { time: "3:00 PM", name: "Snack", calories: 300, items: ["Greek yogurt", "Mixed nuts", "Fruits"] }, { time: "6:00 PM", name: "Pre-workout", calories: 200, items: ["Banana", "Black coffee"] }, { time: "8:00 PM", name: "Dinner", calories: 500, items: ["Roti", "Fish/Paneer", "Vegetables", "Salad"] }, { time: "10:00 PM", name: "Before bed", calories: 100, items: ["Casein protein", "Milk"] }]), "High protein diet for muscle building"],
+        ["Maintenance Plan", 2000, JSON.stringify([{ time: "7:00 AM", name: "Breakfast", calories: 400, items: ["Poha/Upma", "Eggs", "Fruits"] }, { time: "10:00 AM", name: "Snack", calories: 200, items: ["Nuts", "Green tea"] }, { time: "1:00 PM", name: "Lunch", calories: 500, items: ["Rice", "Dal", "Vegetables", "Curd"] }, { time: "4:00 PM", name: "Evening snack", calories: 200, items: ["Sprouts", "Fruits"] }, { time: "7:00 PM", name: "Dinner", calories: 500, items: ["Roti", "Paneer/Chicken", "Salad"] }, { time: "9:00 PM", name: "Before bed", calories: 200, items: ["Milk", "Dry fruits"] }]), "Balanced diet for maintaining weight"],
       ];
       for (const t of templates) await pool.query("INSERT INTO diet_templates (id, name, targetCalories, meals, description) VALUES ($1,$2,$3,$4,$5)", [uuidv4(), ...t]);
     }
