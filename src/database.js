@@ -273,39 +273,7 @@ async function seedDatabase(db) {
       ];
       for (const p of pkgs) await pool.query("INSERT INTO packages (id, name, duration, price, description) VALUES ($1,$2,$3,$4,$5)", p);
     }
-    const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
-    const exWithGif = (await pool.query("SELECT COUNT(*) as c FROM exercises WHERE gifUrl IS NOT NULL AND gifUrl != '")).rows[0].c;
-    if (exCount === 0 || exWithGif === 0) {
-      await pool.query("DELETE FROM exercises");
-      const fs = require("fs");
-      const path = require("path");
-      const exDir = path.join(__dirname, "..", "public", "exercises");
-      if (fs.existsSync(exDir)) {
-        const allExercises = [];
-        const categories = fs.readdirSync(exDir).filter(f => fs.statSync(path.join(exDir, f)).isDirectory());
-        for (const cat of categories) {
-          const catDir = path.join(exDir, cat);
-          const thumbs = fs.readdirSync(catDir).filter(f => f.endsWith(".thumb.webp"));
-          for (const t of thumbs) {
-            const slug = t.replace(".thumb.webp", "");
-            const name = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-            allExercises.push([uuidv4(), name, cat, "beginner", cat, "/exercises/" + cat + "/" + t]);
-          }
-        }
-        for (let i = 0; i < allExercises.length; i += 200) {
-          const batch = allExercises.slice(i, i + 200);
-          const vals = [];
-          const phs = [];
-          let p = 1;
-          for (const e of batch) {
-            phs.push("($"+(p++)+",$"+(p++)+",$"+(p++)+",$"+(p++)+",$"+(p++)+",$"+(p++)+")");
-            vals.push(...e);
-          }
-          await pool.query("INSERT INTO exercises (id,name,category,difficulty,muscleGroup,gifUrl) VALUES " + phs.join(","), vals);
-        }
-        console.log("Exercises seeded: " + allExercises.length + " from " + categories.length + " categories");
-      }
-    }
+    console.log("Exercise seeding deferred to first request");
         const dtCount = (await pool.query("SELECT COUNT(*) as c FROM diet_templates")).rows[0].c;
     if (dtCount === 0) {
       const templates = [
