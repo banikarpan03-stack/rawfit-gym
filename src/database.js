@@ -274,7 +274,9 @@ async function seedDatabase(db) {
       for (const p of pkgs) await pool.query("INSERT INTO packages (id, name, duration, price, description) VALUES ($1,$2,$3,$4,$5)", p);
     }
     const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
-    if (exCount === 0) {
+    const exWithGif = (await pool.query("SELECT COUNT(*) as c FROM exercises WHERE gifUrl IS NOT NULL AND gifUrl != '")).rows[0].c;
+    if (exCount === 0 || exWithGif === 0) {
+      await pool.query("DELETE FROM exercises");
       const fs = require("fs");
       const path = require("path");
       const exDir = path.join(__dirname, "..", "public", "exercises");
