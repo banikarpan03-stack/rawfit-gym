@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-// ── DB helpers (SQLite ? vs PostgreSQL $1) ────────
+// â”€â”€ DB helpers (SQLite ? vs PostgreSQL $1) â”€â”€â”€â”€â”€â”€â”€â”€
 function sql(sqlStr) {
   if (!isPostgres) return sqlStr;
   let i = 0;
@@ -81,7 +81,7 @@ function generateUniqueCode() {
   return `RM-${year}-${rand}`;
 }
 
-// ── Auth ──────────────────────────────────────────
+// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { phone, name } = req.body;
@@ -120,7 +120,7 @@ app.post("/api/auth/register", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Dashboard ─────────────────────────────────────
+// â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/dashboard", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
@@ -134,7 +134,7 @@ app.get("/api/dashboard", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Members ───────────────────────────────────────
+// â”€â”€ Members â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/members", async (req, res) => {
   try {
     const members = await dbAll("SELECT u.*, p.name as packageName, p.duration as packageDuration, p.price as packagePrice FROM users u LEFT JOIN packages p ON u.packageId = p.id WHERE u.role = 'MEMBER' ORDER BY u.createdAt DESC");
@@ -170,7 +170,7 @@ app.delete("/api/members/:id", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Packages ──────────────────────────────────────
+// â”€â”€ Packages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/packages", async (req, res) => {
   try {
     const packages = await dbAll("SELECT * FROM packages WHERE isActive = 1 ORDER BY price ASC");
@@ -180,10 +180,14 @@ app.get("/api/packages", async (req, res) => {
 
 app.post("/api/packages", async (req, res) => {
   try {
-    const { name, duration, price, description } = req.body;
-    const id = name.toLowerCase().replace(/\s+/g, "-");
-    await dbRun("INSERT INTO packages (id, name, duration, price, description) VALUES (?, ?, ?, ?, ?)", [id, name, duration, price, description || null]);
-    res.json({ package: { id, name, duration, price } });
+    const { id, name, duration, price, description } = req.body;
+    if (id) {
+      await dbRun("UPDATE packages SET name = ?, duration = ?, price = ?, description = ? WHERE id = ?", [name, duration, price, description || null, id]);
+    } else {
+      const pkgId = name.toLowerCase().replace(/\s+/g, "-");
+      await dbRun("INSERT INTO packages (id, name, duration, price, description) VALUES (?, ?, ?, ?, ?)", [pkgId, name, duration, price, description || null]);
+    }
+    res.json({ package: { id: id || name.toLowerCase().replace(/\s+/g, "-"), name, duration, price } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -202,7 +206,7 @@ app.delete("/api/packages", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Attendance ────────────────────────────────────
+// â”€â”€ Attendance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/attendance", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
@@ -246,7 +250,7 @@ app.post("/api/attendance/checkout", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Exercises ─────────────────────────────────────
+// â”€â”€ Exercises â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/exercises", async (req, res) => {
   try {
     const exercises = await dbAll("SELECT * FROM exercises ORDER BY category, name");
@@ -270,7 +274,7 @@ app.delete("/api/exercises", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Charts & Templates ────────────────────────────
+// â”€â”€ Charts & Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/templates", async (req, res) => {
   try {
     const dietTemplates = await dbAll("SELECT * FROM diet_templates ORDER BY name");
@@ -343,7 +347,7 @@ app.put("/api/charts/:id", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Notifications ─────────────────────────────────
+// â”€â”€ Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/notifications", async (req, res) => {
   try {
     const { memberId } = req.query;
@@ -362,7 +366,7 @@ app.post("/api/notifications", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Payments ──────────────────────────────────────
+// â”€â”€ Payments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/payments", async (req, res) => {
   try {
     const payments = await dbAll("SELECT * FROM payments ORDER BY date DESC LIMIT 100");
@@ -379,12 +383,12 @@ app.post("/api/payments", async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Keep-alive ping ────────────────────────────────
+// â”€â”€ Keep-alive ping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/ping", (req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
 });
 
-// ── GPS Check ─────────────────────────────────────
+// â”€â”€ GPS Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/api/gps-check", (req, res) => {
   const { lat, lon } = req.query;
   if (!lat || !lon) return res.json({ atGym: false });
@@ -392,7 +396,7 @@ app.get("/api/gps-check", (req, res) => {
   res.json({ atGym: dist <= GYM_RADIUS, distance: Math.round(dist) });
 });
 
-// ── Auto-checkout (4 hours) ──────────────────────
+// â”€â”€ Auto-checkout (4 hours) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function autoCheckout() {
   try {
     const stale = await dbAll(isPostgres
@@ -408,17 +412,17 @@ async function autoCheckout() {
 }
 setInterval(autoCheckout, 60000);
 
-// ── SPA fallback ──────────────────────────────────
+// â”€â”€ SPA fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get("/member/*", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "member", "index.html"));
 });
 
-// ── Start ─────────────────────────────────────────
+// â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function start() {
   await initDatabase();
   await seedDatabase(getDb());
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`\n🏋️  RAWfit Gym Server running on http://0.0.0.0:${PORT}`);
+    console.log(`\nðŸ‹ï¸  RAWfit Gym Server running on http://0.0.0.0:${PORT}`);
     console.log(`   Database: ${process.env.DATABASE_URL ? "PostgreSQL" : "SQLite"}`);
     console.log(`   Members can access from any device on this URL\n`);
   });
