@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: rawfit-gym
+    runtime: node
+    plan: free
+    buildCommand: npm install --production
+    startCommand: node src/server.js
+    healthCheckPath: /ping
+    envVars:
+      - key: NODE_ENV
+        value: production

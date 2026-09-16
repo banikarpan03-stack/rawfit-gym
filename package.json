@@ -1,0 +1,18 @@
+{
+  "name": "rawfit-gym",
+  "version": "1.0.0",
+  "description": "RAWfit Gym Management System",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "pg": "^8.13.0",
+    "uuid": "^14.0.1"
+  }
+}

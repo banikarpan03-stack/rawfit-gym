@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2563eb">
+<title>RAWfit Gym</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f3f4f6;color:#1f2937;min-height:100vh}
+.container{max-width:480px;margin:0 auto;padding:16px}
+.hidden{display:none!important}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:16px;margin-bottom:16px}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-success{background:#16a34a;color:#fff}.btn-danger{background:#dc2626;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.input{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;margin-bottom:12px}
+.label{display:block;font-size:14px;font-weight:500;margin-bottom:4px;color:#374151}
+h1{font-size:24px;font-weight:700;margin-bottom:4px}
+h2{font-size:18px;font-weight:600;margin-bottom:12px}
+.text-muted{color:#6b7280;font-size:14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:12px;font-weight:500}
+.badge-green{background:#dcfce7;color:#166534}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-yellow{background:#fef9c3;color:#854d0e}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.tab{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#6b7280;cursor:pointer;padding:4px 12px}
+.tab.active{color:#2563eb}
+.tab svg{width:24px;height:24px;margin-bottom:2px}
+.page{padding-bottom:80px}
+.exercise-card,.chart-section{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);padding:14px;margin-bottom:12px}
+.check-in-status{text-align:center;padding:32px 16px}
+.gym-locked{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:32px}
+.meal-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+.exercise-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.notif-item{padding:10px;border-radius:8px;margin-bottom:8px;font-size:14px}
+.notif-unread{background:#eff6ff;border:1px solid #bfdbfe}
+.notif-read{background:#f9fafb}
+#splash{position:fixed;inset:0;background:#2563eb;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:9999}
+.exercise-gif{width:100%;max-width:280px;border-radius:8px;margin-top:8px;background:#f3f4f6}
+@media(min-width:768px){
+  .container{max-width:720px;padding:24px}
+  .exercise-card{display:flex;gap:16px;align-items:start}
+  .exercise-gif{max-width:160px;flex-shrink:0;margin-top:0}
+  .card{padding:24px}
+  h1{font-size:28px}
+  h2{font-size:22px}
+}
+@media(min-width:1024px){
+  .container{max-width:960px}
+}
+</style>
+</head>
+<body>
+<div id="splash"><div style="font-size:48px;margin-bottom:16px">🏋️</div><div style="font-size:28px;font-weight:700">RAWfit</div><div style="opacity:.8;margin-top:4px">Loading...</div></div>
+<div id="page-login" class="container hidden">
+<div style="text-align:center;padding:40px 0 24px"><div style="font-size:48px">🏋️</div><h1 style="margin-top:8px">RAWfit</h1><p class="text-muted">Member Login</p></div>
+<div class="card">
+<div><label class="label">Phone Number</label><input class="input" id="loginPhone" type="tel" placeholder="Enter phone number"></div>
+<div><label class="label">Full Name</label><input class="input" id="loginName" type="text" placeholder="Enter full name"></div>
+<div id="loginError" class="hidden" style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;font-size:14px;margin-bottom:12px"></div>
+<button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+</div>
+</div>
+<div id="page-app" class="hidden">
+<div id="page-dashboard" class="container page">
+<div style="padding:16px 0"><h1 id="welcomeName">Welcome!</h1><p class="text-muted" id="memberCode"></p></div>
+<div class="card check-in-status">
+<div id="checkinIcon" style="font-size:48px;margin-bottom:12px">📍</div>
+<h2 id="checkinTitle">Ready to work out?</h2>
+<p class="text-muted" id="checkinSubtitle">Tap below to check in</p>
+<div style="display:flex;gap:12px;margin-top:16px;justify-content:center">
+<button class="btn btn-success" id="btnCheckin" onclick="doCheckin()" style="width:auto;min-width:140px">Check In</button>
+<button class="btn btn-danger hidden" id="btnCheckout" onclick="doCheckout()" style="width:auto;min-width:140px">Check Out</button>
+</div>
+</div>
+<div class="card"><h2>Quick Actions</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+<div onclick="showPage('exercises')" style="text-align:center;padding:16px;background:#f0f9ff;border-radius:10px;cursor:pointer"><div style="font-size:32px">💪</div><div style="font-size:13px;margin-top:4px">Exercises</div></div>
+<div onclick="showPage('charts')" style="text-align:center;padding:16px;background:#f0fdf4;border-radius:10px;cursor:pointer"><div style="font-size:32px">📋</div><div style="font-size:13px;margin-top:4px">My Charts</div></div>
+<div onclick="showPage('attendance')" style="text-align:center;padding:16px;background:#fefce8;border-radius:10px;cursor:pointer"><div style="font-size:32px">✅</div><div style="font-size:13px;margin-top:4px">Attendance</div></div>
+<div onclick="showPage('profile')" style="text-align:center;padding:16px;background:#fdf2f8;border-radius:10px;cursor:pointer"><div style="font-size:32px">👤</div><div style="font-size:13px;margin-top:4px">Profile</div></div>
+</div></div>
+<div class="card"><h2>Notifications</h2><div id="notifList"><p class="text-muted">No notifications</p></div></div>
+</div>
+<div id="page-exercises" class="container page hidden">
+<div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>Exercise Library</h1></div>
+<div id="exerciseGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:12px">📍</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Exercise library is available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
+<div id="exerciseContent" class="hidden">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="exerciseFilters"></div>
+<div id="exerciseList"></div>
+</div>
+</div>
+<div id="page-charts" class="container page hidden">
+<div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>My Charts</h1></div>
+<div id="chartGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:12px">📋</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Charts are available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
+<div id="chartContent" class="hidden"><div id="chartList"></div></div>
+</div>
+<div id="page-attendance" class="container page hidden">
+<div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>Attendance</h1></div>
+<div class="card"><div id="attendanceList"></div></div>
+</div>
+<div id="page-profile" class="container page hidden">
+<div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>My Profile</h1></div>
+<div class="card" id="profileInfo"></div>
+<button class="btn btn-primary" style="margin-top:12px" onclick="doLogout()">Logout</button>
+</div>
+<div class="tab-bar">
+<div class="tab active" onclick="showPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</div>
+<div class="tab" onclick="showPage('exercises')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M3 12h4m10 0h4M12 3v4m0 12v4"/></svg>Exercises</div>
+<div class="tab" onclick="showPage('charts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Charts</div>
+<div class="tab" onclick="showPage('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>Profile</div>
+</div>
+</div>
+<script>
+const API = '';
+let user = null, token = null, atGym = false;
+function show(el) { document.getElementById(el).classList.remove('hidden'); }
+function hide(el) { document.getElementById(el).classList.add('hidden'); }
+function showPage(name) {
+  document.querySelectorAll('[id^="page-"]').forEach(p => { if (p.id !== 'page-app') p.classList.add('hidden'); });
+  document.querySelectorAll('#page-app .page').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-' + name).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['dashboard','exercises','charts','profile'][i] === name);
+  });
+  if (name === 'exercises') checkGps();
+  if (name === 'charts') checkGps();
+  if (name === 'attendance') loadAttendance();
+  if (name === 'profile') loadProfile();
+}
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API + path, { ...opts, headers });
+  return res.json();
+}
+async function doLogin() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  const name = document.getElementById('loginName').value.trim();
+  const errEl = document.getElementById('loginError');
+  if (!phone || !name) { errEl.textContent = 'Please fill all fields'; errEl.classList.remove('hidden'); return; }
+  try {
+    const data = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ phone, name }) });
+    if (data.error) { errEl.textContent = data.error; errEl.classList.remove('hidden'); return; }
+    token = data.token; user = data.user;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    startApp();
+  } catch(e) { errEl.textContent = 'Connection failed'; errEl.classList.remove('hidden'); }
+}
+function doLogout() {
+  localStorage.removeItem('token'); localStorage.removeItem('user');
+  user = null; token = null;
+  hide('page-app'); show('page-login');
+}
+async function startApp() {
+  hide('page-login'); show('page-app');
+  document.getElementById('welcomeName').textContent = 'Welcome, ' + user.name + '!';
+  document.getElementById('memberCode').textContent = 'Code: ' + user.uniqueCode;
+  loadDashboard();
+}
+async function loadDashboard() {
+  const data = await api('/api/attendance/history/' + user.id);
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecord = (data.records || []).find(r => r.checkIn.startsWith(today) && !r.checkOut);
+  if (todayRecord) {
+    hide('btnCheckin'); document.getElementById('btnCheckout').classList.remove('hidden');
+    document.getElementById('checkinIcon').textContent = '✅';
+    document.getElementById('checkinTitle').textContent = 'You are checked in';
+    document.getElementById('checkinSubtitle').textContent = 'Check-in: ' + new Date(todayRecord.checkIn).toLocaleTimeString();
+  } else {
+    show('btnCheckin'); document.getElementById('btnCheckout').classList.add('hidden');
+    document.getElementById('checkinIcon').textContent = '📍';
+    document.getElementById('checkinTitle').textContent = 'Ready to work out?';
+    document.getElementById('checkinSubtitle').textContent = 'Tap below to check in';
+  }
+  const notifData = await api('/api/notifications?memberId=' + user.id);
+  const notifList = document.getElementById('notifList');
+  const notifs = notifData.notifications || [];
+  if (notifs.length === 0) { notifList.innerHTML = '<p class="text-muted">No notifications</p>'; return; }
+  notifList.innerHTML = notifs.slice(0, 5).map(n =>
+    '<div class="notif-item ' + (n.isRead ? 'notif-read' : 'notif-unread') + '">' + n.message + '<br><span style="font-size:12px;color:#9ca3af">' + new Date(n.createdAt).toLocaleString() + '</span></div>'
+  ).join('');
+}
+async function doCheckin() {
+  if (!navigator.geolocation) { alert('Location access required for check-in'); return; }
+  document.getElementById('btnCheckin').textContent = 'Checking location...';
+  document.getElementById('btnCheckin').disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const d = await api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude);
+      if (!d.atGym) {
+        alert('You must be at the gym to check in (' + d.distance + 'm away, max 100m)');
+        document.getElementById('btnCheckin').textContent = 'Check In';
+        document.getElementById('btnCheckin').disabled = false;
+        return;
+      }
+      const data = await api('/api/attendance/checkin', { method: 'POST', body: JSON.stringify({ memberId: user.id }) });
+      if (data.error) { alert(data.error); }
+      document.getElementById('btnCheckin').textContent = 'Check In';
+      document.getElementById('btnCheckin').disabled = false;
+      loadDashboard();
+    },
+    () => { alert('Location access required for check-in'); document.getElementById('btnCheckin').textContent = 'Check In'; document.getElementById('btnCheckin').disabled = false; },
+    { enableHighAccuracy: true }
+  );
+}
+async function doCheckout() {
+  if (!navigator.geolocation) { alert('Location access required for check-out'); return; }
+  document.getElementById('btnCheckout').textContent = 'Checking location...';
+  document.getElementById('btnCheckout').disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const d = await api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude);
+      if (!d.atGym) {
+        alert('You must be at the gym to check out (' + d.distance + 'm away, max 100m)');
+        document.getElementById('btnCheckout').textContent = 'Check Out';
+        document.getElementById('btnCheckout').disabled = false;
+        return;
+      }
+      const data = await api('/api/attendance/checkout', { method: 'POST', body: JSON.stringify({ memberId: user.id }) });
+      if (data.error) { alert(data.error); }
+      document.getElementById('btnCheckout').textContent = 'Check Out';
+      document.getElementById('btnCheckout').disabled = false;
+      loadDashboard();
+    },
+    () => { alert('Location access required for check-out'); document.getElementById('btnCheckout').textContent = 'Check Out'; document.getElementById('btnCheckout').disabled = false; },
+    { enableHighAccuracy: true }
+  );
+}
+function checkGps() {
+  if (!navigator.geolocation) { atGym = false; updateGpsUI(); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => { api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude).then(d => { atGym = d.atGym; updateGpsUI(); }); },
+    () => { atGym = false; updateGpsUI(); },
+    { enableHighAccuracy: true }
+  );
+}
+function updateGpsUI() {
+  if (atGym) {
+    hide('exerciseGpsLock'); show('exerciseContent');
+    hide('chartGpsLock'); show('chartContent');
+    loadExercises(); loadCharts();
+  } else {
+    show('exerciseGpsLock'); hide('exerciseContent');
+    show('chartGpsLock'); hide('chartContent');
+  }
+}
+let allExercises = [], exerciseFilter = 'all';
+async function loadExercises() {
+  if (allExercises.length > 0) { renderExercises(); return; }
+  const data = await api('/api/exercises');
+  allExercises = data.exercises || [];
+  const cats = [...new Set(allExercises.map(e => e.category))];
+  document.getElementById('exerciseFilters').innerHTML =
+    '<span onclick="filterExercises(\'all\')" class="badge badge-blue" style="cursor:pointer;padding:6px 12px">All</span>' +
+    cats.map(c => '<span onclick="filterExercises(\'' + c + '\')" class="badge" style="cursor:pointer;padding:6px 12px;background:#f3f4f6">' + c.charAt(0).toUpperCase() + c.slice(1) + '</span>').join('');
+  renderExercises();
+}
+function filterExercises(cat) { exerciseFilter = cat; renderExercises(); }
+function renderExercises() {
+  const list = exerciseFilter === 'all' ? allExercises : allExercises.filter(e => e.category === exerciseFilter);
+  document.getElementById('exerciseList').innerHTML = list.map(e => {
+    let gifHtml = '';
+    if (e.gifUrl) {
+      gifHtml = '<img src="' + e.gifUrl + '" alt="' + e.name + '" class="exercise-gif" loading="lazy">';
+    }
+    let videoHtml = '';
+    if (e.videoUrl) {
+      const ytMatch = e.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
+      const vid = ytMatch ? ytMatch[1] : null;
+      if (vid) {
+        videoHtml = '<div style="margin-top:8px;border-radius:8px;overflow:hidden;position:relative;padding-bottom:56.25%;height:0"><iframe src="https://www.youtube.com/embed/' + vid + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allowfullscreen loading="lazy"></iframe></div>';
+      } else {
+        videoHtml = '<div style="margin-top:8px"><a href="' + e.videoUrl + '" target="_blank" style="color:#2563eb;font-size:13px">▶ Watch Video</a></div>';
+      }
+    }
+    return '<div class="exercise-card">' + gifHtml + '<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:start"><h3 style="font-size:15px">' + e.name + '</h3><span class="badge ' + (e.difficulty === 'beginner' ? 'badge-green' : e.difficulty === 'intermediate' ? 'badge-yellow' : 'badge-red') + '">' + e.difficulty + '</span></div>' + (e.muscleGroup ? '<div style="font-size:13px;color:#6b7280;margin-top:4px">Target: ' + e.muscleGroup + '</div>' : '') + (e.description ? '<div style="font-size:13px;color:#4b5563;margin-top:4px">' + e.description + '</div>' : '') + videoHtml + '</div></div>';
+  }).join('');
+}
+async function loadCharts() {
+  const data = await api('/api/charts/member/' + user.id);
+  const charts = data.charts || [];
+  if (charts.length === 0) { document.getElementById('chartList').innerHTML = '<p class="text-muted" style="text-align:center;padding:32px">No charts assigned yet</p>'; return; }
+  document.getElementById('chartList').innerHTML = charts.map(c => {
+    const content = JSON.parse(c.content);
+    let inner = '';
+    if (c.type === 'DIET' && content.meals) {
+      inner = '<div style="font-size:13px;color:#6b7280;margin-bottom:8px">Target: ' + content.targetCalories + ' kcal/day</div>' +
+        content.meals.map(m => '<div class="meal-item"><div><strong>' + m.time + '</strong> ' + m.name + '<br><span style="font-size:12px;color:#9ca3af">' + (m.items || []).join(', ') + '</span></div><span style="white-space:nowrap;color:#6b7280">' + m.calories + ' kcal</span></div>').join('');
+    } else if (c.type === 'WORKOUT' && content.exercises) {
+      inner = '<div style="font-size:13px;color:#6b7280;margin-bottom:8px">Difficulty: ' + content.difficulty + '</div>' +
+        content.exercises.map((e, i) => '<div class="exercise-item"><div><span style="color:#9ca3af;margin-right:8px">' + (i + 1) + '</span><strong>' + e.name + '</strong></div><span style="font-size:13px;color:#6b7280">' + (e.sets ? e.sets + '×' + e.reps : e.duration || '') + '</span></div>').join('');
+    }
+    return '<div class="chart-section"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><h3>' + content.name + '</h3><span class="badge ' + (c.type === 'DIET' ? 'badge-green' : 'badge-blue') + '">' + c.type + '</span></div>' + inner + '</div>';
+  }).join('');
+}
+async function loadAttendance() {
+  const data = await api('/api/attendance/history/' + user.id);
+  const records = data.records || [];
+  if (records.length === 0) { document.getElementById('attendanceList').innerHTML = '<p class="text-muted">No attendance records</p>'; return; }
+  document.getElementById('attendanceList').innerHTML = '<h2>Recent Attendance</h2>' +
+    records.slice(0, 20).map(r => {
+      const dur = r.checkOut ? Math.round((new Date(r.checkOut) - new Date(r.checkIn)) / 60000) : '-';
+      return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6"><div><div style="font-weight:500">' + new Date(r.checkIn).toLocaleDateString() + '</div><div style="font-size:13px;color:#6b7280">' + new Date(r.checkIn).toLocaleTimeString() + ' - ' + (r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : 'Open') + '</div></div><div style="text-align:right"><span class="badge ' + (r.checkOut ? 'badge-green' : 'badge-yellow') + '">' + (r.checkOut ? 'Done' : 'Open') + '</span>' + (dur !== '-' ? '<div style="font-size:12px;color:#6b7280;margin-top:4px">' + dur + ' min</div>' : '') + '</div></div>';
+    }).join('');
+}
+async function loadProfile() {
+  const data = await api('/api/members/' + user.id);
+  const m = data.member;
+  const active = m.endDate && new Date(m.endDate) >= new Date();
+  document.getElementById('profileInfo').innerHTML = '<h2>Personal Information</h2>' +
+    [['Name', m.name], ['Code', m.uniqueCode], ['Phone', m.phone], ['DOB', m.dob ? new Date(m.dob).toLocaleDateString() : 'N/A'], ['Address', m.address || 'N/A'], ['Height', m.height ? m.height + ' cm' : 'N/A'], ['Weight', m.weight ? m.weight + ' kg' : 'N/A'], ['Medical', m.medicalIssues || 'None'], ['', ''], ['Membership', ''], ['Package', m.packageName || 'N/A'], ['Status', active ? 'Active' : 'Expired'], ['Start', m.startDate ? new Date(m.startDate).toLocaleDateString() : 'N/A'], ['End', m.endDate ? new Date(m.endDate).toLocaleDateString() : 'N/A'], ['Total Paid', '₹' + (m.totalAmount || 0).toLocaleString()]]
+    .filter(r => r[0] || r[1] === '').map(r => r[0] === '' ? '<div style="border-bottom:1px solid #f3f4f6;margin:8px 0"></div>' :
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6"><span style="color:#6b7280">' + r[0] + '</span><span style="font-weight:500">' + r[1] + '</span></div>').join('');
+}
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('splash').classList.add('hidden'), 500);
+  token = localStorage.getItem('token'); user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (token && user) startApp(); else show('page-login');
+});
+</script>
+</body>
+</html>

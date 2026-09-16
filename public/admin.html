@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAWfit Admin Panel</title>
+<style>
+:root {
+  --primary: #ff4d4d;
+  --primary-dark: #cc0000;
+  --secondary: #1a1a2e;
+  --bg: #0f0f1a;
+  --card: #1a1a2e;
+  --card-hover: #252540;
+  --text: #e0e0e0;
+  --text-muted: #888;
+  --border: #333;
+  --success: #28a745;
+  --warning: #ffc107;
+  --info: #17a2b8;
+  --danger: #dc3545;
+  --diet-green: #28a745;
+  --workout-blue: #007bff;
+  --sidebar-width: 250px;
+  --header-height: 60px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: var(--primary); text-decoration: none; }
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-box {
+  background: var(--card);
+  padding: 40px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.login-box h1 {
+  text-align: center;
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-size: 28px;
+}
+
+.login-box .subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: #252540;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #218838; }
+.btn-info { background: var(--info); color: #fff; }
+.btn-info:hover { background: #138496; }
+.btn-warning { background: var(--warning); color: #000; }
+.btn-warning:hover { background: #e0a800; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #c82333; }
+.btn-secondary { background: #444; color: #fff; }
+.btn-secondary:hover { background: #555; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-block { width: 100%; justify-content: center; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hidden { display: none !important; }
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--secondary);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+  overflow-y: auto;
+  transition: transform 0.3s;
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-header h2 {
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.sidebar-menu { padding: 10px 0; }
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.sidebar-menu-item:hover { background: var(--card-hover); color: var(--text); }
+.sidebar-menu-item.active { background: var(--primary); color: #fff; }
+.sidebar-menu-item .icon { font-size: 18px; width: 24px; text-align: center; }
+
+.sidebar-menu-section {
+  padding: 12px 20px 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-top: 10px;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+}
+
+.topbar {
+  height: var(--header-height);
+  background: var(--secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-right span { color: var(--text-muted); font-size: 14px; }
+
+.page-content { padding: 24px; }
+
+.page-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+/* Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.stat-card h3 {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.card-header h3 { font-size: 16px; font-weight: 600; }
+.card-body { padding: 20px; }
+
+/* Tables */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  background: rgba(255,77,77,0.1);
+  color: var(--primary);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success { background: rgba(40,167,69,0.2); color: #28a745; }
+.badge-warning { background: rgba(255,193,7,0.2); color: #ffc107; }
+.badge-danger { background: rgba(220,53,69,0.2); color: #dc3545; }
+.badge-info { background: rgba(23,162,184,0.2); color: #17a2b8; }
+.badge-diet { background: rgba(40,167,69,0.2); color: #28a745; }
+.badge-workout { background: rgba(0,123,255,0.2); color: #007bff; }
+
+/* Search */
+.search-box {
+  position: relative;
+  max-width: 300px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 8px 14px 8px 36px;
+  background: #252540;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.search-box::before {
+  content: "🔍";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+
+/* Grid */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Template Cards */
+.template-card {
+  background: var(--card);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-card:hover {
+  border-color: var(--primary);
+  background: var(--card-hover);
+}
+
+.template-card.selected {
+  border-color: var(--primary);
+  background: rgba(255,77,77,0.1);
+}
+
+.template-card.diet-card { border-left: 4px solid var(--diet-green); }
+.template-card.workout-card { border-left: 4px solid var(--workout-blue); }
+.template-card h4 { margin-bottom: 6px; font-size: 15px; }
+.template-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 4px; }
+.template-card .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--border);
+}
+
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* Food database items */
+.food-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #252540;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.food-item .food-name { font-weight: 500; }
+.food-item .food-cal { color: var(--primary); font-weight: 600; font-size: 13px; }
+.food-item .food-serving { color: var(--text-muted); font-size: 12px; }
+
+/* Exercise items */
+.exercise-card {
+  background: var(--card);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.exercise-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.exercise-card .gif-container {
+  width: 100%;
+  height: 160px;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.exercise-card .gif-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.exercise-card .exercise-info { padding: 12px; }
+.exercise-card .exercise-info h4 { font-size: 14px; margin-bottom: 4px; }
+.exercise-card .exercise-info p { font-size: 12px; color: var(--text-muted); }
+
+/* Drag and drop */
+.drag-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.drag-item:active { cursor: grabbing; }
+.drag-item:hover { background: var(--card-hover); }
+.drag-item .drag-handle { color: var(--text-muted); font-size: 18px; }
+.drag-item.dragging { opacity: 0.5; border-style: dashed; }
+
+.drop-zone {
+  min-height: 100px;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.drop-zone.drag-over {
+  border-color: var(--primary);
+  background: rgba(255,77,77,0.05);
+}
+
+/* Meal Section */
+.meal-section {
+  background: #252540;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.meal-section h4 {
+  margin-bottom: 12px;
+  color: var(--primary);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meal-food-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.meal-food-row input,
+.meal-food-row select {
+  padding: 8px 10px;
+  background: #1a1a2e;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.food-search-container { position: relative; }
+
+.food-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1a1a2e;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+}
+
+.food-suggestions.show { display: block; }
+
+.food-suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.food-suggestion-item:hover { background: var(--card-hover); }
+.food-suggestion-item .cal { color: var(--primary); font-size: 12px; }
+
+.calorie-display {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  padding: 10px;
+  background: rgba(255,77,77,0.1);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+/* Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--card);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 { font-size: 18px; }
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-body { padding: 20px; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-close { display: block; }
+  .hamburger { display: block; }
+
+  .sidebar-overlay.show { display: block; }
+
+  .main-content { margin-left: 0; }
+
+  .page-content { padding: 16px; }
+
+  .grid-2 { grid-template-columns: 1fr; }
+
+  .meal-food-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  table { font-size: 12px; }
+  th, td { padding: 8px 10px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+
+  .login-box { padding: 24px; }
+
+  .card-header { flex-direction: column; align-items: stretch; }
+}
+
+/* Chart Assignment Section */
+.chart-assignment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .chart-assignment-grid { grid-template-columns: 1fr; }
+}
+
+.assigned-chart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #252540;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--primary);
+}
+
+.assigned-chart-item .chart-info { flex: 1; }
+.assigned-chart-item .chart-info h5 { font-size: 14px; margin-bottom: 2px; }
+.assigned-chart-item .chart-info p { font-size: 12px; color: var(--text-muted); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideIn 0.3s ease;
+  border-left: 4px solid var(--primary);
+}
+
+.toast.success { border-left-color: var(--success); }
+.toast.error { border-left-color: var(--danger); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* Exercise picker */
+.exercise-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background: #111;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.exercise-picker-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.exercise-picker-item:hover { border-color: var(--primary); }
+.exercise-picker-item.selected { border-color: var(--success); background: rgba(40,167,69,0.1); }
+.exercise-picker-item img { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; margin-bottom: 4px; }
+.exercise-picker-item p { font-size: 11px; color: var(--text-muted); }
+.exercise-picker-item .name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+
+.selected-exercise-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #252540;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.selected-exercise-item .exercise-details {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.selected-exercise-item input {
+  width: 60px;
+  padding: 4px 8px;
+  background: #1a1a2e;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  text-align: center;
+}
+
+.selected-exercise-item label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-container">
+  <div class="login-box">
+    <h1>RAWfit</h1>
+    <p class="subtitle">Gym Management System - Admin Panel</p>
+    <div id="loginError" style="display:none; color:var(--danger); margin-bottom:12px; font-size:13px;"></div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="tel" id="loginPhone" placeholder="Enter phone number" maxlength="10">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Enter password">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="handleLogin()" style="margin-top:8px;">Login</button>
+    <p style="text-align:center; margin-top:16px; font-size:12px; color:var(--text-muted);">
+      Demo: Phone 9999999999 / Password: admin
+    </p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appContainer" class="app-container hidden">
+
+  <!-- Sidebar Overlay -->
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2>RAWfit</h2>
+      <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="sidebar-menu">
+      <div class="sidebar-menu-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="sidebar-menu-section">Member Management</div>
+      <div class="sidebar-menu-item" data-page="members" onclick="navigateTo('members')">
+        <span class="icon">👥</span> Members
+      </div>
+      <div class="sidebar-menu-item" data-page="admission" onclick="navigateTo('admission')">
+        <span class="icon">➕</span> New Admission
+      </div>
+      <div class="sidebar-menu-item" data-page="attendance" onclick="navigateTo('attendance')">
+        <span class="icon">📋</span> Attendance
+      </div>
+      <div class="sidebar-menu-section">Templates</div>
+      <div class="sidebar-menu-item" data-page="dietTemplates" onclick="navigateTo('dietTemplates')">
+        <span class="icon">🥗</span> Diet Templates
+      </div>
+      <div class="sidebar-menu-item" data-page="workoutTemplates" onclick="navigateTo('workoutTemplates')">
+        <span class="icon">💪</span> Workout Templates
+      </div>
+      <div class="sidebar-menu-section">Assignment</div>
+      <div class="sidebar-menu-item" data-page="charts" onclick="navigateTo('charts')">
+        <span class="icon">📝</span> Chart Assignment
+      </div>
+      <div class="sidebar-menu-section">Library</div>
+      <div class="sidebar-menu-item" data-page="packages" onclick="navigateTo('packages')">
+        <span class="icon">📦</span> Packages
+      </div>
+      <div class="sidebar-menu-item" data-page="exercises" onclick="navigateTo('exercises')">
+        <span class="icon">🏋️</span> Exercise Library
+      </div>
+      <div class="sidebar-menu-item" data-page="foodDatabase" onclick="navigateTo('foodDatabase')">
+        <span class="icon">🍛</span> Food Database
+      </div>
+      <div class="sidebar-menu-section"></div>
+      <div class="sidebar-menu-item" onclick="handleLogout()">
+        <span class="icon">🚪</span> Logout
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-right">
+        <span id="currentUser"></span>
+        <button class="btn btn-sm btn-danger" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="page-dashboard" class="page-content">
+      <h1 class="page-title">Dashboard</h1>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><h3>Recent Members</h3></div>
+          <div class="card-body">
+            <div class="table-container">
+              <table><thead><tr><th>Name</th><th>Phone</th><th>Package</th><th>Joined</th></tr></thead>
+              <tbody id="recentMembersTable"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Today's Attendance</h3></div>
+          <div class="card-body">
+            <div class="table-container">
+              <table><thead><tr><th>Member</th><th>Check In</th><th>Check Out</th><th>Action</th></tr></thead>
+              <tbody id="todayAttendanceTable"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div id="page-members" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Members</h1>
+        <div class="search-box">
+          <input type="text" id="memberSearch" placeholder="Search members..." oninput="filterMembers()">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Name</th><th>Phone</th><th>Package</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="membersTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admission -->
+    <div id="page-admission" class="page-content hidden">
+      <h1 class="page-title">New Admission</h1>
+      <div class="card">
+        <div class="card-body">
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="admName" placeholder="Enter full name">
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" id="admPhone" placeholder="Enter phone number" maxlength="10">
+            </div>
+            <div class="form-group">
+              <label>Email (optional)</label>
+              <input type="email" id="admEmail" placeholder="Enter email">
+            </div>
+            <div class="form-group">
+              <label>Gender</label>
+              <select id="admGender">
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <input type="date" id="admDob">
+            </div>
+            <div class="form-group">
+              <label>Package</label>
+              <select id="admPackage" onchange="calcAdmissionPrice()"></select>
+            </div>
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="admStartDate">
+            </div>
+            <div class="form-group">
+              <label>End Date (auto-calculated)</label>
+              <input type="date" id="admEndDate" readonly>
+            </div>
+          </div>
+          <div class="stats-grid" style="margin-top:16px;">
+            <div class="stat-card">
+              <h3>Package Price</h3>
+              <div class="value" id="admPrice">₹0</div>
+            </div>
+            <div class="stat-card">
+              <h3>Discount (%)</h3>
+              <input type="number" id="admDiscount" value="0" min="0" max="100" style="width:100%;padding:8px;background:#252540;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:24px;font-weight:700;text-align:center;" oninput="calcAdmissionPrice()">
+            </div>
+            <div class="stat-card">
+              <h3>Final Price</h3>
+              <div class="value" id="admFinalPrice">₹0</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="submitAdmission()">Submit Admission</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance -->
+    <div id="page-attendance" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Attendance</h1>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <select id="attendanceMemberSelect" style="padding:8px;background:#252540;border:1px solid var(--border);border-radius:8px;color:var(--text);"></select>
+          <button class="btn btn-success btn-sm" onclick="doCheckin()">Check In</button>
+          <button class="btn btn-warning btn-sm" onclick="doCheckout()">Check Out</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Member</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Duration</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="attendanceTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diet Templates -->
+    <div id="page-dietTemplates" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Diet Templates</h1>
+        <button class="btn btn-success" onclick="openDietTemplateCreator()">+ Create Diet Template</button>
+      </div>
+      <div class="grid-3" id="dietTemplatesList"></div>
+    </div>
+
+    <!-- Workout Templates -->
+    <div id="page-workoutTemplates" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Workout Templates</h1>
+        <button class="btn btn-info" onclick="openWorkoutTemplateCreator()">+ Create Workout Template</button>
+      </div>
+      <div class="grid-3" id="workoutTemplatesList"></div>
+    </div>
+
+    <!-- Chart Assignment -->
+    <div id="page-charts" class="page-content hidden">
+      <h1 class="page-title">Chart Assignment</h1>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-body">
+          <div class="form-group">
+            <label>Select Member</label>
+            <select id="chartMemberSelect" onchange="loadMemberCharts()" style="width:100%;"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-assignment-grid">
+        <div>
+          <div class="tabs">
+            <div class="tab active" onclick="switchChartTab('diet')">Diet Charts</div>
+            <div class="tab" onclick="switchChartTab('workout')">Workout Charts</div>
+          </div>
+          <div id="chartTabContent">
+            <div class="drop-zone" id="availableCharts"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px; width:100%; justify-content:center;" onclick="assignSelectedChart()">Assign Selected Template</button>
+        </div>
+        <div>
+          <h3 style="margin-bottom:12px; font-size:16px;">Assigned Charts</h3>
+          <div id="assignedCharts">
+            <div class="empty-state">
+              <div class="icon">📝</div>
+              <p>Select a member to view assigned charts</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Packages -->
+    <div id="page-packages" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Packages</h1>
+        <button class="btn btn-primary" onclick="openPackageModal()">+ Add Package</button>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Name</th><th>Duration</th><th>Price</th><th>Description</th><th>Actions</th></tr></thead>
+              <tbody id="packagesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exercises -->
+    <div id="page-exercises" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Exercise Library</h1>
+        <button class="btn btn-primary" onclick="openExerciseModal()">+ Add Exercise</button>
+      </div>
+      <div class="grid-3" id="exercisesList"></div>
+    </div>
+
+    <!-- Food Database -->
+    <div id="page-foodDatabase" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Indian/Bengali Food Database</h1>
+        <div class="search-box">
+          <input type="text" id="foodDbSearch" placeholder="Search foods..." oninput="filterFoodDatabase()">
+        </div>
+      </div>
+      <div class="grid-3" id="foodDatabaseList"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Package Modal -->
+<div id="packageModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="packageModalTitle">Add Package</h3>
+      <button class="modal-close" onclick="closePackageModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editPackageId">
+      <div class="form-group">
+        <label>Package Name</label>
+        <input type="text" id="pkgName" placeholder="e.g. 3 Month Gold">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Duration (days)</label>
+          <input type="number" id="pkgDuration" placeholder="e.g. 90">
+        </div>
+        <div class="form-group">
+          <label>Price (₹)</label>
+          <input type="number" id="pkgPrice" placeholder="e.g. 5000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="pkgDescription" rows="3" placeholder="Package description..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePackageModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePackage()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Exercise Modal -->
+<div id="exerciseModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="exerciseModalTitle">Add Exercise</h3>
+      <button class="modal-close" onclick="closeExerciseModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editExerciseId">
+      <div class="form-group">
+        <label>Exercise Name</label>
+        <input type="text" id="exName" placeholder="e.g. Bench Press">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="exCategory">
+            <option value="strength">Strength</option>
+            <option value="cardio">Cardio</option>
+            <option value="flexibility">Flexibility</option>
+            <option value="balance">Balance</option>
+            <option value="hiit">HIIT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Difficulty</label>
+          <select id="exDifficulty">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Muscle Group</label>
+        <input type="text" id="exMuscle" placeholder="e.g. Chest, Triceps">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="exDescription" rows="3" placeholder="How to perform..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Video URL (YouTube etc.)</label>
+        <input type="url" id="exVideo" placeholder="https://youtube.com/watch?v=...">
+      </div>
+      <div class="form-group">
+        <label>GIF URL</label>
+        <input type="url" id="exGif" placeholder="https://...gif">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeExerciseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExercise()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diet Template Creator Modal -->
+<div id="dietTemplateModal" class="modal-overlay">
+  <div class="modal" style="max-width:750px;">
+    <div class="modal-header">
+      <h3>Create Diet Template</h3>
+      <button class="modal-close" onclick="closeDietTemplateCreator()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Template Name</label>
+          <input type="text" id="dtName" placeholder="e.g. Weight Loss Plan">
+        </div>
+        <div class="form-group">
+          <label>Target Calories (kcal)</label>
+          <input type="number" id="dtTargetCal" placeholder="e.g. 2000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="dtDescription" rows="2" placeholder="Brief description..."></textarea>
+      </div>
+
+      <div class="meal-section">
+        <h4>🌅 Breakfast</h4>
+        <div id="dtBreakfastMeals"></div>
+        <button class="btn btn-sm btn-secondary" onclick="addMealItem('breakfast')">+ Add Food</button>
+      </div>
+
+      <div class="meal-section">
+        <h4>☀️ Lunch</h4>
+        <div id="dtLunchMeals"></div>
+        <button class="btn btn-sm btn-secondary" onclick="addMealItem('lunch')">+ Add Food</button>
+      </div>
+
+      <div class="meal-section">
+        <h4>🕐 Snacks</h4>
+        <div id="dtSnacksMeals"></div>
+        <button class="btn btn-sm btn-secondary" onclick="addMealItem('snacks')">+ Add Food</button>
+      </div>
+
+      <div class="meal-section">
+        <h4>🌙 Dinner</h4>
+        <div id="dtDinnerMeals"></div>
+        <button class="btn btn-sm btn-secondary" onclick="addMealItem('dinner')">+ Add Food</button>
+      </div>
+
+      <div class="calorie-display">
+        Total: <span id="dtTotalCal">0</span> kcal
+        <span id="dtCalDiff" style="font-size:14px; margin-left:10px;"></span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDietTemplateCreator()">Cancel</button>
+      <button class="btn btn-success" onclick="saveDietTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workout Template Creator Modal -->
+<div id="workoutTemplateModal" class="modal-overlay">
+  <div class="modal" style="max-width:750px;">
+    <div class="modal-header">
+      <h3>Create Workout Template</h3>
+      <button class="modal-close" onclick="closeWorkoutTemplateCreator()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Template Name</label>
+          <input type="text" id="wtName" placeholder="e.g. Push Day">
+        </div>
+        <div class="form-group">
+          <label>Difficulty</label>
+          <select id="wtDifficulty">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="wtDescription" rows="2" placeholder="Brief description..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Exercise Picker (click to add)</label>
+        <input type="text" id="wtExerciseSearch" placeholder="Search exercises..." oninput="filterExercisePicker()" style="margin-bottom:8px;">
+        <div class="exercise-picker" id="exercisePicker"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Selected Exercises (drag to reorder)</label>
+        <div id="selectedExercises"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeWorkoutTemplateCreator()">Cancel</button>
+      <button class="btn btn-info" onclick="saveWorkoutTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const INDIAN_FOOD_DB = [
+  {name:"Basmati Rice (cooked)",serving:"1 cup (150g)",calories:210,category:"rice"},
+  {name:"Brown Rice (cooked)",serving:"1 cup (150g)",calories:170,category:"rice"},
+  {name:"Jeera Rice",serving:"1 cup (150g)",calories:220,category:"rice"},
+  {name:"Lemon Rice",serving:"1 cup (150g)",calories:230,category:"rice"},
+  {name:"Coconut Rice",serving:"1 cup (150g)",calories:260,category:"rice"},
+  {name:"Panta Bhat (Fermented Rice)",serving:"1 cup",calories:160,category:"bengali"},
+  {name:"Khichdi (Rice & Dal)",serving:"1 cup (200g)",calories:190,category:"rice"},
+  {name:"Pulao",serving:"1 cup (180g)",calories:250,category:"rice"},
+  {name:"Biryani (Chicken)",serving:"1 plate (250g)",calories:380,category:"rice"},
+  {name:"Biryani (Veg)",serving:"1 plate (250g)",calories:290,category:"rice"},
+  {name:"Chapati/Roti (whole wheat)",serving:"1 piece",calories:70,category:"bread"},
+  {name:"Chapati with Ghee",serving:"1 piece",calories:95,category:"bread"},
+  {name:"Paratha (Plain)",serving:"1 piece",calories:180,category:"bread"},
+  {name:"Aloo Paratha",serving:"1 piece",calories:250,category:"bread"},
+  {name:"Gobi Paratha",serving:"1 piece",calories:220,category:"bread"},
+  {name:"Luchi (Maida Puri)",serving:"1 piece",calories:120,category:"bread"},
+  {name:"Naan (Plain)",serving:"1 piece",calories:210,category:"bread"},
+  {name:"Butter Naan",serving:"1 piece",calories:260,category:"bread"},
+  {name:"Garlic Naan",serving:"1 piece",calories:230,category:"bread"},
+  {name:"Puri",serving:"1 piece",calories:100,category:"bread"},
+  {name:"Bhakri (Jowar)",serving:"1 piece",calories:80,category:"bread"},
+  {name:"Pesarattu (Moong Dosa)",serving:"1 piece",calories:130,category:"bread"},
+  {name:"Idli",serving:"2 pieces",calories:120,category:"bread"},
+  {name:"Dosa (Plain)",serving:"1 piece",calories:130,category:"bread"},
+  {name:"Masala Dosa",serving:"1 piece",calories:210,category:"bread"},
+  {name:"Uttapam",serving:"1 piece",calories:180,category:"bread"},
+  {name:"Moong Dal (Yellow)",serving:"1 cup (200g)",calories:160,category:"dal"},
+  {name:"Masoor Dal (Red)",serving:"1 cup (200g)",calories:170,category:"dal"},
+  {name:"Toor Dal (Arhar)",serving:"1 cup (200g)",calories:180,category:"dal"},
+  {name:"Chana Dal",serving:"1 cup (200g)",calories:190,category:"dal"},
+  {name:"Urad Dal (Black)",serving:"1 cup (200g)",calories:175,category:"dal"},
+  {name:"Rajma (Kidney Beans)",serving:"1 cup (200g)",calories:210,category:"dal"},
+  {name:"Chole (Chickpeas)",serving:"1 cup (200g)",calories:220,category:"dal"},
+  {name:"Black Eyed Peas (Lobia)",serving:"1 cup (200g)",calories:180,category:"dal"},
+  {name:"Dal Makhani",serving:"1 cup (200g)",calories:280,category:"dal"},
+  {name:"Sambar",serving:"1 cup (200g)",calories:140,category:"dal"},
+  {name:"Aloo Dum",serving:"1 cup (200g)",calories:180,category:"vegetable"},
+  {name:"Begun Bhaja (Fried Eggplant)",serving:"1 cup (150g)",calories:200,category:"bengali"},
+  {name:"Aloo Bhujia",serving:"1 cup (150g)",calories:160,category:"vegetable"},
+  {name:"Bhindi Masala",serving:"1 cup (150g)",calories:130,category:"vegetable"},
+  {name:"Palak Paneer",serving:"1 cup (200g)",calories:220,category:"vegetable"},
+  {name:"Paneer Butter Masala",serving:"1 cup (200g)",calories:310,category:"vegetable"},
+  {name:"Aloo Gobi",serving:"1 cup (200g)",calories:150,category:"vegetable"},
+  {name:"Mixed Vegetable Curry",serving:"1 cup (200g)",calories:140,category:"vegetable"},
+  {name:"Cabbage Sabzi",serving:"1 cup (150g)",calories:90,category:"vegetable"},
+  {name:"Data (Drumstick Curry)",serving:"1 cup (200g)",calories:110,category:"bengali"},
+  {name:"Shukto",serving:"1 cup (200g)",calories:120,category:"bengali"},
+  {name:"Borabai (Ridge Gourd)",serving:"1 cup (150g)",calories:70,category:"bengali"},
+  {name:"Karela (Bitter Gourd)",serving:"1 cup (150g)",calories:80,category:"vegetable"},
+  {name:"Baingan Bharta",serving:"1 cup (200g)",calories:130,category:"vegetable"},
+  {name:"Mushroom Masala",serving:"1 cup (200g)",calories:160,category:"vegetable"},
+  {name:"Jeera Aloo",serving:"1 cup (200g)",calories:170,category:"vegetable"},
+  {name:"Rohu Fish (Curry)",serving:"1 piece (150g)",calories:220,category:"fish"},
+  {name:"Hilsa/Ilish (Fried)",serving:"1 piece (100g)",calories:260,category:"bengali"},
+  {name:"Hilsa Curry (Shorshe)",serving:"1 piece (150g)",calories:300,category:"bengali"},
+  {name:"Pomfret (Fried)",serving:"1 piece (100g)",calories:240,category:"fish"},
+  {name:"Katla Fish Curry",serving:"1 piece (150g)",calories:210,category:"fish"},
+  {name:"Pabda Fish (Curry)",serving:"1 piece (100g)",calories:180,category:"bengali"},
+  {name:"Surmai (Kingfish)",serving:"1 piece (150g)",calories:230,category:"fish"},
+  {name:"Bangda (Mackerel)",serving:"1 piece (100g)",calories:200,category:"fish"},
+  {name:"Tilapia (Fried)",serving:"1 piece (100g)",calories:210,category:"fish"},
+  {name:"Fish Fry (Bengali)",serving:"1 piece (100g)",calories:270,category:"bengali"},
+  {name:"Macher Jhol",serving:"1 cup (200g)",calories:180,category:"bengali"},
+  {name:"Chingri Malai Curry",serving:"1 cup (200g)",calories:280,category:"bengali"},
+  {name:"Chicken Curry (Homestyle)",serving:"1 cup (200g)",calories:250,category:"chicken"},
+  {name:"Chicken Tikka",serving:"4 pieces (120g)",calories:200,category:"chicken"},
+  {name:"Butter Chicken",serving:"1 cup (200g)",calories:350,category:"chicken"},
+  {name:"Chicken Biryani",serving:"1 plate (250g)",calories:400,category:"chicken"},
+  {name:"Chicken Korma",serving:"1 cup (200g)",calories:320,category:"chicken"},
+  {name:"Chicken Tandoori",serving:"1 piece (150g)",calories:230,category:"chicken"},
+  {name:"Chicken vindaloo",serving:"1 cup (200g)",calories:280,category:"chicken"},
+  {name:"Chicken 65",serving:"1 plate (150g)",calories:300,category:"chicken"},
+  {name:"Kadai Chicken",serving:"1 cup (200g)",calories:290,category:"chicken"},
+  {name:"Mutton Curry",serving:"1 cup (200g)",calories:320,category:"mutton"},
+  {name:"Mutton Korma",serving:"1 cup (200g)",calories:380,category:"mutton"},
+  {name:"Mutton Biryani",serving:"1 plate (250g)",calories:450,category:"mutton"},
+  {name:"Mutton Rogan Josh",serving:"1 cup (200g)",calories:340,category:"mutton"},
+  {name:"Mutton Keema",serving:"1 cup (200g)",calories:300,category:"mutton"},
+  {name:"Goat Brain Masala",serving:"1 cup (150g)",calories:260,category:"mutton"},
+  {name:"Egg (Boiled)",serving:"1 large",calories:78,category:"egg"},
+  {name:"Egg (Fried)",serving:"1 large",calories:91,category:"egg"},
+  {name:"Omelette",serving:"2 eggs",calories:160,category:"egg"},
+  {name:"Egg Bhurji",serving:"1 cup (150g)",calories:190,category:"egg"},
+  {name:"Egg Curry",serving:"2 eggs + gravy",calories:250,category:"egg"},
+  {name:"Anda Masala",serving:"1 cup (200g)",calories:220,category:"egg"},
+  {name:"Dahi (Plain Yogurt)",serving:"1 cup (150g)",calories:90,category:"dairy"},
+  {name:"Paneer (Cottage Cheese)",serving:"100g",calories:265,category:"dairy"},
+  {name:"Paneer Tikka",serving:"4 pieces (120g)",calories:280,category:"dairy"},
+  {name:"Lassi (Sweet)",serving:"1 glass (250ml)",calories:180,category:"dairy"},
+  {name:"Lassi (Salted)",serving:"1 glass (250ml)",calories:120,category:"dairy"},
+  {name:"Chaas (Buttermilk)",serving:"1 glass (250ml)",calories:60,category:"dairy"},
+  {name:"Raita",serving:"1 cup (150g)",calories:80,category:"dairy"},
+  {name:"Ghee (Clarified Butter)",serving:"1 tbsp (15g)",calories:120,category:"dairy"},
+  {name:"Milk (Full Fat)",serving:"1 glass (200ml)",calories:130,category:"dairy"},
+  {name:"Rabri",serving:"1 cup (150g)",calories:300,category:"dairy"},
+  {name:"Kheer",serving:"1 cup (200g)",calories:250,category:"dairy"},
+  {name:"Samosa (Veg)",serving:"1 piece",calories:210,category:"snack"},
+  {name:"Samosa (Chicken)",serving:"1 piece",calories:240,category:"snack"},
+  {name:"Pakora (Veg)",serving:"4 pieces",calories:180,category:"snack"},
+  {name:"Aloo Tikki",serving:"2 pieces",calories:170,category:"snack"},
+  {name:"Pani Puri (6 pcs)",serving:"6 pieces",calories:150,category:"snack"},
+  {name:"Bhel Puri",serving:"1 plate",calories:180,category:"snack"},
+  {name:"Sev Puri",serving:"1 plate",calories:200,category:"snack"},
+  {name:"Dhokla",serving:"2 pieces",calories:120,category:"snack"},
+  {name:"Vada Pav",serving:"1 piece",calories:250,category:"snack"},
+  {name:"Pav Bhaji",serving:"1 plate",calories:350,category:"snack"},
+  {name:"Chaat",serving:"1 plate",calories:200,category:"snack"},
+  {name:"Kachori",serving:"1 piece",calories:180,category:"snack"},
+  {name:"Litti Chokha",serving:"2 pieces",calories:350,category:"bengali"},
+  {name:"Pitha (Bengali Rice Cake)",serving:"2 pieces",calories:200,category:"bengali"},
+  {name:"Sandesh",serving:"2 pieces (60g)",calories:160,category:"bengali"},
+  {name:"Rasgulla",serving:"2 pieces (80g)",calories:150,category:"bengali"},
+  {name:"Mishti Doi",serving:"1 cup (150g)",calories:180,category:"bengali"},
+  {name:"Jalebi",serving:"4 pieces",calories:200,category:"snack"},
+  {name:"Gulab Jamun",serving:"2 pieces",calories:175,category:"snack"},
+  {name:"Peda",serving:"2 pieces (40g)",calories:130,category:"snack"},
+  {name:"Laddoo (Besan)",serving:"1 piece (40g)",calories:160,category:"snack"},
+  {name:"Barfi",serving:"2 pieces (40g)",calories:150,category:"snack"},
+  {name:"Chai (with sugar & milk)",serving:"1 cup (150ml)",calories:60,category:"beverage"},
+  {name:"Black Tea",serving:"1 cup (150ml)",calories:5,category:"beverage"},
+  {name:"Green Tea",serving:"1 cup (150ml)",calories:5,category:"beverage"},
+  {name:"Nimbu Pani (Lemon Water)",serving:"1 glass",calories:40,category:"beverage"},
+  {name:"Coconut Water",serving:"1 glass (200ml)",calories:45,category:"beverage"},
+  {name:"Alu Bhaja (French Fries Bengali)",serving:"1 cup (100g)",calories:250,category:"bengali"},
+  {name:"Mochar Ghonto (Banana Flower)",serving:"1 cup (150g)",calories:120,category:"bengali"},
+  {name:"Posto (Poppy Seed Curry)",serving:"1 cup (150g)",calories:160,category:"bengali"},
+  {name:"Chingri Bhape (Steamed Prawns)",serving:"1 cup (150g)",calories:180,category:"bengali"},
+  {name:"Mutton Kosha",serving:"1 cup (200g)",calories:350,category:"bengali"},
+  {name:"Kochu Shak (Taro Greens)",serving:"1 cup (150g)",calories:90,category:"bengali"},
+  {name:"Sorse Ilish (Hilsa in Mustard)",serving:"1 piece (150g)",calories:280,category:"bengali"},
+  {name:"Doi Mach (Fish in Yogurt)",serving:"1 piece (150g)",calories:240,category:"bengali"},
+  {name:"Aloo Posto",serving:"1 cup (200g)",calories:190,category:"bengali"},
+  {name:"Begun Posto",serving:"1 cup (200g)",calories:170,category:"bengali"},
+  {name:"Potol Posto",serving:"1 cup (200g)",calories:150,category:"bengali"},
+  {name:"Ghugni (Yellow Peas)",serving:"1 cup (200g)",calories:180,category:"bengali"},
+  {name:"Cholar Dal",serving:"1 cup (200g)",calories:200,category:"bengali"},
+  {name:"Dalna (Mixed Veg in Gravy)",serving:"1 cup (200g)",calories:140,category:"bengali"},
+  {name:"Labra (Mixed Vegetable)",serving:"1 cup (200g)",calories:130,category:"bengali"},
+  {name:"Enchor (Green Jackfruit)",serving:"1 cup (200g)",calories:150,category:"bengali"},
+  {name:"Soya Chaap Curry",serving:"1 cup (200g)",calories:180,category:"vegetable"},
+  {name:"Tofu Bhurji",serving:"1 cup (150g)",calories:150,category:"vegetable"},
+  {name:"Sprouts Salad",serving:"1 cup (150g)",calories:80,category:"vegetable"},
+  {name:"Fruit Chaat",serving:"1 cup (200g)",calories:100,category:"snack"},
+  {name:"Banana",serving:"1 medium",calories:105,category:"fruit"},
+  {name:"Mango",serving:"1 medium",calories:150,category:"fruit"},
+  {name:"Apple",serving:"1 medium",calories:95,category:"fruit"},
+  {name:"Orange",serving:"1 medium",calories:65,category:"fruit"},
+  {name:"Papaya",serving:"1 cup (150g)",calories:60,category:"fruit"},
+  {name:"Guava",serving:"1 medium",calories:68,category:"fruit"},
+  {name:"Watermelon",serving:"1 cup (150g)",calories:45,category:"fruit"},
+  {name:"Pomegranate",serving:"1 cup (150g)",calories:120,category:"fruit"},
+  {name:"Pineapple",serving:"1 cup (150g)",calories:80,category:"fruit"},
+  {name:"Grapes",serving:"1 cup (150g)",calories:105,category:"fruit"},
+  {name:"Curd Rice",serving:"1 cup (200g)",calories:180,category:"rice"},
+  {name:"Tehri (Yellow Rice)",serving:"1 cup (200g)",calories:230,category:"rice"},
+  {name:"Fish Cutlet",serving:"2 pieces",calories:250,category:"bengali"},
+  {name:"Chicken Cutlet",serving:"2 pieces",calories:280,category:"chicken"},
+  {name:"Egg Roll",serving:"1 piece",calories:280,category:"snack"},
+  {name:"Chicken Roll",serving:"1 piece",calories:350,category:"chicken"},
+  {name:"Momos (Steamed Veg)",serving:"6 pieces",calories:200,category:"snack"},
+  {name:"Momos (Chicken)",serving:"6 pieces",calories:250,category:"chicken"},
+  {name:"Thukpa",serving:"1 bowl (300ml)",calories:220,category:"snack"},
+  {name:"Chowmein (Veg)",serving:"1 plate (250g)",calories:300,category:"snack"},
+  {name:"Chowmein (Chicken)",serving:"1 plate (250g)",calories:380,category:"chicken"},
+  {name:"Tandoori Roti",serving:"1 piece",calories:80,category:"bread"},
+  {name:"Missi Roti",serving:"1 piece",calories:120,category:"bread"},
+  {name:"Rumali Roti",serving:"1 piece",calories:90,category:"bread"},
+  {name:"Paneer Paratha",serving:"1 piece",calories:280,category:"bread"},
+  {name:"Methi Thepla",serving:"2 pieces",calories:180,category:"bread"},
+  {name:"Makki di Roti",serving:"1 piece",calories:100,category:"bread"},
+  {name:"Sarson da Saag",serving:"1 cup (200g)",calories:180,category:"vegetable"},
+  {name:"Malai Kofta",serving:"1 cup (200g)",calories:350,category:"vegetable"},
+  {name:"Navratan Korma",serving:"1 cup (200g)",calories:280,category:"vegetable"},
+  {name:"Chana Masala",serving:"1 cup (200g)",calories:200,category:"dal"},
+  {name:"Bhatura",serving:"1 piece",calories:200,category:"bread"},
+  {name:"Chole Bhature",serving:"1 plate",calories:420,category:"bread"},
+  {name:"Puri (Small)",serving:"2 pieces",calories:150,category:"bread"},
+  {name:"Poha",serving:"1 cup (150g)",calories:140,category:"rice"},
+  {name:"Upma",serving:"1 cup (150g)",calories:150,category:"rice"},
+  {name:"Sabudana Khichdi",serving:"1 cup (150g)",calories:180,category:"rice"},
+  {name:"Rava Dosa",serving:"1 piece",calories:120,category:"bread"},
+  {name:"Medu Vada",serving:"2 pieces",calories:140,category:"snack"},
+  {name:"Pesarattu",serving:"1 piece",calories:130,category:"bread"},
+  {name:"Appam",serving:"2 pieces",calories:140,category:"bread"},
+  {name:"Puttu",serving:"1 cup (150g)",calories:160,category:"rice"},
+  {name:"Avial",serving:"1 cup (200g)",calories:150,category:"vegetable"},
+  {name:"Olan",serving:"1 cup (200g)",calories:120,category:"vegetable"},
+  {name:"Erissery",serving:"1 cup (200g)",calories:170,category:"vegetable"},
+  {name:"Rasam",serving:"1 cup (200ml)",calories:50,category:"dal"},
+  {name:"Papadum",serving:"1 piece",calories:30,category:"snack"},
+  {name:"Achaar (Pickle)",serving:"1 tbsp",calories:15,category:"snack"},
+  {name:"Coconut Chutney",serving:"2 tbsp",calories:50,category:"snack"},
+  {name:"Mint Chutney",serving:"2 tbsp",calories:20,category:"snack"},
+  {name:"Tamarind Chutney",serving:"2 tbsp",calories:60,category:"snack"}
+];
+
+let state = {
+  token: null,
+  user: null,
+  members: [],
+  packages: [],
+  attendance: [],
+  exercises: [],
+  dietTemplates: [],
+  workoutTemplates: [],
+  currentPage: 'dashboard',
+  chartTab: 'diet',
+  selectedChartTemplate: null,
+  memberCharts: [],
+  currentExercisePickerFilter: ''
+};
+
+const API = '';
+
+function showToast(msg, type = 'success') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+async function apiCall(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  try {
+    const res = await fetch(API + path, {
+      method, headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || data.message || 'Request failed');
+    return data;
+  } catch (e) {
+    showToast(e.message, 'error');
+    throw e;
+  }
+}
+
+// AUTH
+async function handleLogin() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!phone || !password) {
+    document.getElementById('loginError').textContent = 'Please fill all fields';
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  try {
+    const data = await apiCall('POST', '/api/auth/login', { phone, name: password });
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem('rawfit_token', data.token);
+    localStorage.setItem('rawfit_user', JSON.stringify(data.user));
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    document.getElementById('currentUser').textContent = data.user.name || data.user.phone;
+    loadDashboard();
+  } catch (e) {
+    document.getElementById('loginError').textContent = e.message || 'Login failed';
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function handleLogout() {
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('rawfit_token');
+  localStorage.removeItem('rawfit_user');
+  document.getElementById('appContainer').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginPhone').value = '';
+  document.getElementById('loginPassword').value = '';
+}
+
+// NAVIGATION
+function navigateTo(page) {
+  document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-' + page).classList.remove('hidden');
+  document.querySelectorAll('.sidebar-menu-item').forEach(i => i.classList.remove('active'));
+  const item = document.querySelector(`.sidebar-menu-item[data-page="${page}"]`);
+  if (item) item.classList.add('active');
+  state.currentPage = page;
+  toggleSidebar(false);
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'members') loadMembers();
+  else if (page === 'attendance') loadAttendance();
+  else if (page === 'packages') loadPackages();
+  else if (page === 'exercises') loadExercises();
+  else if (page === 'dietTemplates') loadDietTemplates();
+  else if (page === 'workoutTemplates') loadWorkoutTemplates();
+  else if (page === 'charts') loadChartData();
+  else if (page === 'foodDatabase') renderFoodDatabase();
+  else if (page === 'admission') loadAdmissionForm();
+}
+
+function toggleSidebar(force) {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if (force === false) {
+    sb.classList.remove('open');
+    ov.classList.remove('show');
+  } else {
+    sb.classList.toggle('open');
+    ov.classList.toggle('show');
+  }
+}
+
+// DASHBOARD
+async function loadDashboard() {
+  try {
+    const data = await apiCall('GET', '/api/dashboard');
+    const s = data.stats || {};
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><h3>Total Members</h3><div class="value">${s.totalMembers || 0}</div></div>
+      <div class="stat-card"><h3>Active Members</h3><div class="value">${s.activeMembers || 0}</div></div>
+      <div class="stat-card"><h3>Today's Attendance</h3><div class="value">${s.todayAttendance || 0}</div></div>
+      <div class="stat-card"><h3>Revenue This Month</h3><div class="value">₹${(s.monthlyRevenue || 0).toLocaleString()}</div></div>
+    `;
+    const rm = data.recentMembers || [];
+    document.getElementById('recentMembersTable').innerHTML = rm.length ? rm.map(m =>
+      `<tr><td>${m.name}</td><td>${m.phone}</td><td>${m.packageName || '-'}</td><td>${m.startDate ? new Date(m.startDate).toLocaleDateString() : '-'}</td></tr>`
+    ).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No recent members</td></tr>';
+
+    const ta = data.todayAttendees || [];
+    document.getElementById('todayAttendanceTable').innerHTML = ta.length ? ta.map(a =>
+      `<tr><td>${a.memberName || '-'}</td><td>${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</td><td>${a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : '-'}</td><td>${!a.checkOut ? `<button class="btn btn-sm btn-warning" onclick="forceCheckout('${a.memberId}')">Force Checkout</button>` : '-'}</td></tr>`
+    ).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No attendance today</td></tr>';
+  } catch (e) {}
+}
+
+// MEMBERS
+async function loadMembers() {
+  try {
+    const data = await apiCall('GET', '/api/members');
+    state.members = data.members || [];
+    renderMembers(state.members);
+  } catch (e) {}
+}
+
+function renderMembers(members) {
+  document.getElementById('membersTable').innerHTML = members.length ? members.map(m => {
+    const active = m.status === 'active' || (!m.endDate || new Date(m.endDate) >= new Date());
+    return `<tr>
+      <td>${m.name}</td><td>${m.phone}</td><td>${m.packageName || '-'}</td>
+      <td>${m.startDate ? new Date(m.startDate).toLocaleDateString() : '-'}</td>
+      <td>${m.endDate ? new Date(m.endDate).toLocaleDateString() : '-'}</td>
+      <td><span class="badge ${active ? 'badge-success' : 'badge-danger'}">${active ? 'Active' : 'Inactive'}</span></td>
+      <td><button class="btn btn-sm btn-info" onclick="viewMember('${m._id || m.id}')">View</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No members found</td></tr>';
+}
+
+function filterMembers() {
+  const q = document.getElementById('memberSearch').value.toLowerCase();
+  const filtered = state.members.filter(m => m.name.toLowerCase().includes(q) || m.phone.includes(q));
+  renderMembers(filtered);
+}
+
+async function viewMember(id) {
+  try {
+    const data = await apiCall('GET', '/api/members/' + id);
+    const m = data.member || data;
+    alert(`Name: ${m.name}\nPhone: ${m.phone}\nPackage: ${m.packageName || '-'}\nStart: ${m.startDate ? new Date(m.startDate).toLocaleDateString() : '-'}\nEnd: ${m.endDate ? new Date(m.endDate).toLocaleDateString() : '-'}`);
+  } catch (e) {}
+}
+
+// ADMISSION
+async function loadAdmissionForm() {
+  try {
+    const data = await apiCall('GET', '/api/packages');
+    state.packages = data.packages || [];
+    const sel = document.getElementById('admPackage');
+    sel.innerHTML = '<option value="">Select Package</option>' + state.packages.map(p =>
+      `<option value="${p._id || p.id}" data-price="${p.price}" data-duration="${p.duration}">${p.name} - ₹${p.price} (${p.duration} days)</option>`
+    ).join('');
+  } catch (e) {}
+}
+
+function calcAdmissionPrice() {
+  const sel = document.getElementById('admPackage');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) { document.getElementById('admPrice').textContent = '₹0'; document.getElementById('admFinalPrice').textContent = '₹0'; return; }
+  const price = parseInt(opt.dataset.price) || 0;
+  const duration = parseInt(opt.dataset.duration) || 0;
+  const discount = parseInt(document.getElementById('admDiscount').value) || 0;
+  document.getElementById('admPrice').textContent = '₹' + price;
+  const final_ = price - (price * discount / 100);
+  document.getElementById('admFinalPrice').textContent = '₹' + Math.round(final_);
+
+  const startDate = document.getElementById('admStartDate').value;
+  if (startDate && duration) {
+    const end = new Date(startDate);
+    end.setDate(end.getDate() + duration);
+    document.getElementById('admEndDate').value = end.toISOString().split('T')[0];
+  }
+}
+
+async function submitAdmission() {
+  const name = document.getElementById('admName').value.trim();
+  const phone = document.getElementById('admPhone').value.trim();
+  const email = document.getElementById('admEmail').value.trim();
+  const gender = document.getElementById('admGender').value;
+  const dob = document.getElementById('admDob').value;
+  const packageId = document.getElementById('admPackage').value;
+  const startDate = document.getElementById('admStartDate').value;
+  const discount = parseInt(document.getElementById('admDiscount').value) || 0;
+
+  if (!name || !phone || !packageId || !startDate) {
+    showToast('Please fill required fields (Name, Phone, Package, Start Date)', 'error');
+    return;
+  }
+
+  try {
+    await apiCall('POST', '/api/auth/register', { name, phone, email, gender, dob, packageId, startDate, discount });
+    showToast('Member admitted successfully!');
+    document.getElementById('admName').value = '';
+    document.getElementById('admPhone').value = '';
+    document.getElementById('admEmail').value = '';
+    document.getElementById('admGender').value = '';
+    document.getElementById('admDob').value = '';
+    document.getElementById('admStartDate').value = '';
+    document.getElementById('admEndDate').value = '';
+    document.getElementById('admDiscount').value = '0';
+    calcAdmissionPrice();
+  } catch (e) {}
+}
+
+// ATTENDANCE
+async function loadAttendance() {
+  try {
+    const [attData, memData] = await Promise.all([
+      apiCall('GET', '/api/attendance'),
+      state.members.length ? { members: state.members } : apiCall('GET', '/api/members')
+    ]);
+    state.attendance = attData.attendance || [];
+    state.members = memData.members || [];
+    const sel = document.getElementById('attendanceMemberSelect');
+    sel.innerHTML = '<option value="">Select Member</option>' + state.members.map(m =>
+      `<option value="${m._id || m.id}">${m.name}</option>`
+    ).join('');
+    renderAttendance(state.attendance);
+  } catch (e) {}
+}
+
+function renderAttendance(list) {
+  document.getElementById('attendanceTable').innerHTML = list.length ? list.map(a => {
+    const duration = a.checkIn && a.checkOut ? Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 60000) + ' min' : '-';
+    return `<tr>
+      <td>${a.memberName || '-'}</td>
+      <td>${a.date ? new Date(a.date).toLocaleDateString() : (a.checkIn ? new Date(a.checkIn).toLocaleDateString() : '-')}</td>
+      <td>${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</td>
+      <td>${a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : '-'}</td>
+      <td>${duration}</td>
+      <td><span class="badge ${a.checkOut ? 'badge-success' : 'badge-warning'}">${a.checkOut ? 'Complete' : 'Active'}</span></td>
+      <td>${!a.checkOut ? `<button class="btn btn-sm btn-warning" onclick="forceCheckout('${a.memberId || a.member}')">Force Checkout</button>` : '-'}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No attendance records</td></tr>';
+}
+
+async function doCheckin() {
+  const memberId = document.getElementById('attendanceMemberSelect').value;
+  if (!memberId) { showToast('Select a member', 'error'); return; }
+  try {
+    await apiCall('POST', '/api/attendance/checkin', { memberId });
+    showToast('Checked in successfully!');
+    loadAttendance();
+  } catch (e) {}
+}
+
+async function doCheckout() {
+  const memberId = document.getElementById('attendanceMemberSelect').value;
+  if (!memberId) { showToast('Select a member', 'error'); return; }
+  try {
+    await apiCall('POST', '/api/attendance/checkout', { memberId });
+    showToast('Checked out successfully!');
+    loadAttendance();
+  } catch (e) {}
+}
+
+async function forceCheckout(memberId) {
+  try {
+    await apiCall('POST', '/api/attendance/checkout', { memberId });
+    showToast('Force checkout done!');
+    if (state.currentPage === 'dashboard') loadDashboard();
+    else if (state.currentPage === 'attendance') loadAttendance();
+  } catch (e) {}
+}
+
+// PACKAGES
+async function loadPackages() {
+  try {
+    const data = await apiCall('GET', '/api/packages');
+    state.packages = data.packages || [];
+    document.getElementById('packagesTable').innerHTML = state.packages.length ? state.packages.map(p =>
+      `<tr>
+        <td>${p.name}</td><td>${p.duration} days</td><td>₹${p.price}</td><td>${p.description || '-'}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" onclick="editPackage('${p._id || p.id}','${p.name}',${p.duration},${p.price},'${(p.description||'').replace(/'/g,"\\'")}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePackage('${p._id || p.id}')">Delete</button>
+        </td>
+      </tr>`
+    ).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No packages</td></tr>';
+  } catch (e) {}
+}
+
+function openPackageModal(id, name, duration, price, desc) {
+  document.getElementById('packageModalTitle').textContent = id ? 'Edit Package' : 'Add Package';
+  document.getElementById('editPackageId').value = id || '';
+  document.getElementById('pkgName').value = name || '';
+  document.getElementById('pkgDuration').value = duration || '';
+  document.getElementById('pkgPrice').value = price || '';
+  document.getElementById('pkgDescription').value = desc || '';
+  document.getElementById('packageModal').classList.add('show');
+}
+
+function closePackageModal() { document.getElementById('packageModal').classList.remove('show'); }
+
+function editPackage(id, name, duration, price, desc) {
+  openPackageModal(id, name, duration, price, desc);
+}
+
+async function savePackage() {
+  const id = document.getElementById('editPackageId').value;
+  const name = document.getElementById('pkgName').value.trim();
+  const duration = parseInt(document.getElementById('pkgDuration').value);
+  const price = parseInt(document.getElementById('pkgPrice').value);
+  const description = document.getElementById('pkgDescription').value.trim();
+  if (!name || !duration || !price) { showToast('Fill all required fields', 'error'); return; }
+  try {
+    if (id) {
+      await apiCall('POST', '/api/packages', { id, name, duration, price, description });
+    } else {
+      await apiCall('POST', '/api/packages', { name, duration, price, description });
+    }
+    showToast('Package saved!');
+    closePackageModal();
+    loadPackages();
+  } catch (e) {}
+}
+
+async function deletePackage(id) {
+  if (!confirm('Delete this package?')) return;
+  try {
+    await apiCall('DELETE', '/api/packages', { id });
+    showToast('Package deleted!');
+    loadPackages();
+  } catch (e) {}
+}
+
+// EXERCISES
+async function loadExercises() {
+  try {
+    const data = await apiCall('GET', '/api/exercises');
+    state.exercises = data.exercises || [];
+    renderExercises(state.exercises);
+  } catch (e) {}
+}
+
+function renderExercises(list) {
+  document.getElementById('exercisesList').innerHTML = list.length ? list.map(e => `
+    <div class="exercise-card">
+      <div class="gif-container">
+        ${e.gifUrl ? `<img src="${e.gifUrl}" alt="${e.name}" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-muted)\\'>🏋️ No GIF</div>'">` :
+          `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:48px;">🏋️</div>`}
+      </div>
+      <div class="exercise-info">
+        <h4>${e.name}</h4>
+        <p><span class="badge badge-info">${e.category}</span> <span class="badge badge-warning">${e.difficulty}</span></p>
+        <p style="margin-top:4px;">${e.muscleGroup || ''}</p>
+        ${e.videoUrl ? `<a href="${e.videoUrl}" target="_blank" class="btn btn-sm btn-primary" style="margin-top:8px;">Watch Video</a>` : ''}
+        <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteExercise('${e._id || e.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state"><div class="icon">🏋️</div><p>No exercises yet</p></div>';
+}
+
+function openExerciseModal() {
+  document.getElementById('exerciseModalTitle').textContent = 'Add Exercise';
+  document.getElementById('editExerciseId').value = '';
+  document.getElementById('exName').value = '';
+  document.getElementById('exCategory').value = 'strength';
+  document.getElementById('exDifficulty').value = 'beginner';
+  document.getElementById('exMuscle').value = '';
+  document.getElementById('exDescription').value = '';
+  document.getElementById('exVideo').value = '';
+  document.getElementById('exGif').value = '';
+  document.getElementById('exerciseModal').classList.add('show');
+}
+
+function closeExerciseModal() { document.getElementById('exerciseModal').classList.remove('show'); }
+
+async function saveExercise() {
+  const id = document.getElementById('editExerciseId').value;
+  const name = document.getElementById('exName').value.trim();
+  const category = document.getElementById('exCategory').value;
+  const difficulty = document.getElementById('exDifficulty').value;
+  const muscleGroup = document.getElementById('exMuscle').value.trim();
+  const description = document.getElementById('exDescription').value.trim();
+  const videoUrl = document.getElementById('exVideo').value.trim();
+  const gifUrl = document.getElementById('exGif').value.trim();
+  if (!name) { showToast('Exercise name required', 'error'); return; }
+  try {
+    await apiCall('POST', '/api/exercises', { id, name, category, difficulty, muscleGroup, description, videoUrl, gifUrl });
+    showToast('Exercise saved!');
+    closeExerciseModal();
+    loadExercises();
+  } catch (e) {}
+}
+
+async function deleteExercise(id) {
+  if (!confirm('Delete this exercise?')) return;
+  try {
+    await apiCall('DELETE', '/api/exercises', { id });
+    showToast('Exercise deleted!');
+    loadExercises();
+  } catch (e) {}
+}
+
+// FOOD DATABASE
+function renderFoodDatabase() {
+  const search = (document.getElementById('foodDbSearch')?.value || '').toLowerCase();
+  const filtered = INDIAN_FOOD_DB.filter(f => f.name.toLowerCase().includes(search) || f.category.toLowerCase().includes(search));
+  const grouped = {};
+  filtered.forEach(f => {
+    if (!grouped[f.category]) grouped[f.category] = [];
+    grouped[f.category].push(f);
+  });
+  const catLabels = {
+    rice: '🍚 Rice & Grains', bread: '🫓 Roti & Bread', dal: '🥣 Dal & Legumes',
+    vegetable: '🥬 Vegetables', fish: '🐟 Fish', chicken: '🍗 Chicken',
+    mutton: '🍖 Mutton', egg: '🥚 Eggs', dairy: '🥛 Dairy', snack: '🥘 Snacks',
+    bengali: '🇧🇩 Bengali Specials', beverage: '🥤 Beverages', fruit: '🍎 Fruits'
+  };
+  let html = '';
+  for (const [cat, items] of Object.entries(grouped)) {
+    html += `<div style="grid-column:1/-1;margin-top:16px;"><h3 style="color:var(--primary);font-size:16px;margin-bottom:8px;">${catLabels[cat] || cat}</h3></div>`;
+    items.forEach(f => {
+      html += `<div class="food-item" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div><div class="food-name">${f.name}</div><div class="food-serving">${f.serving}</div></div>
+        <div class="food-cal">${f.calories} kcal</div>
+      </div>`;
+    });
+  }
+  if (!filtered.length) html = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🍛</div><p>No foods found</p></div>';
+  document.getElementById('foodDatabaseList').innerHTML = html;
+}
+
+function filterFoodDatabase() { renderFoodDatabase(); }
+
+// DIET TEMPLATES
+async function loadDietTemplates() {
+  try {
+    const data = await apiCall('GET', '/api/templates');
+    state.dietTemplates = data.dietTemplates || [];
+    renderDietTemplates();
+  } catch (e) {}
+}
+
+function renderDietTemplates() {
+  const list = document.getElementById('dietTemplatesList');
+  if (!state.dietTemplates.length) {
+    list.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🥗</div><p>No diet templates yet. Create one!</p></div>';
+    return;
+  }
+  list.innerHTML = state.dietTemplates.map(t => {
+    let totalCal = 0;
+    let meals = t.meals;
+    if (typeof meals === 'string') { try { meals = JSON.parse(meals); } catch(e) { meals = {}; } }
+    if (meals) {
+      for (const meal of Object.values(meals)) {
+        if (Array.isArray(meal)) meal.forEach(m => totalCal += (m.calories || 0) * (m.servings || 1));
+      }
+    }
+    return `<div class="template-card diet-card">
+      <h4>${t.name}</h4>
+      <p>${t.description || 'No description'}</p>
+      <div class="tags">
+        <span class="badge badge-diet">${totalCal} kcal</span>
+        <span class="badge badge-success">Diet</span>
+      </div>
+      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteDietTemplate('${t._id || t.id}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteDietTemplate(id) {
+  if (!confirm('Delete this diet template?')) return;
+  try {
+    await apiCall('DELETE', '/api/templates/diet/' + id);
+    showToast('Deleted!');
+    loadDietTemplates();
+  } catch (e) {}
+}
+
+// DIET TEMPLATE CREATOR
+let dietMealCounter = { breakfast: 0, lunch: 0, snacks: 0, dinner: 0 };
+
+function openDietTemplateCreator() {
+  document.getElementById('dtName').value = '';
+  document.getElementById('dtTargetCal').value = '';
+  document.getElementById('dtDescription').value = '';
+  document.getElementById('dtTotalCal').textContent = '0';
+  document.getElementById('dtCalDiff').textContent = '';
+  dietMealCounter = { breakfast: 0, lunch: 0, snacks: 0, dinner: 0 };
+  ['breakfast', 'lunch', 'snacks', 'dinner'].forEach(m => {
+    document.getElementById('dt' + m.charAt(0).toUpperCase() + m.slice(1) + 'Meals').innerHTML = '';
+  });
+  addMealItem('breakfast');
+  addMealItem('lunch');
+  addMealItem('dinner');
+  document.getElementById('dietTemplateModal').classList.add('show');
+}
+
+function closeDietTemplateCreator() { document.getElementById('dietTemplateModal').classList.remove('show'); }
+
+function addMealItem(meal) {
+  const id = dietMealCounter[meal]++;
+  const containerId = 'dt' + meal.charAt(0).toUpperCase() + meal.slice(1) + 'Meals';
+  const container = document.getElementById(containerId);
+  const div = document.createElement('div');
+  div.className = 'meal-food-row';
+  div.dataset.meal = meal;
+  div.dataset.itemId = id;
+  div.innerHTML = `
+    <div class="food-search-container">
+      <input type="text" placeholder="Search food..." class="food-search-input" oninput="searchFood(this, event)" onfocus="searchFood(this, event)" data-meal="${meal}" data-id="${id}">
+      <div class="food-suggestions" id="suggestions_${meal}_${id}"></div>
+    </div>
+    <input type="number" placeholder="Servings" value="1" min="0.5" step="0.5" class="serving-input" onchange="updateDietCalories()">
+    <input type="text" placeholder="kcal" class="cal-display" readonly style="color:var(--primary);font-weight:600;">
+    <button class="btn btn-sm btn-danger" onclick="removeMealItem(this)">✕</button>
+  `;
+  container.appendChild(div);
+}
+
+function removeMealItem(btn) {
+  btn.closest('.meal-food-row').remove();
+  updateDietCalories();
+}
+
+function searchFood(input, event) {
+  const meal = input.dataset.meal;
+  const id = input.dataset.id;
+  const suggestionsDiv = document.getElementById('suggestions_' + meal + '_' + id);
+  const query = input.value.toLowerCase().trim();
+
+  document.querySelectorAll('.food-suggestions').forEach(s => s.classList.remove('show'));
+
+  if (query.length < 1) { suggestionsDiv.classList.remove('show'); return; }
+
+  const matches = INDIAN_FOOD_DB.filter(f => f.name.toLowerCase().includes(query)).slice(0, 10);
+  if (!matches.length) { suggestionsDiv.classList.remove('show'); return; }
+
+  suggestionsDiv.innerHTML = matches.map((f, i) =>
+    `<div class="food-suggestion-item" onclick="selectFood('${meal}', '${id}', '${f.name.replace(/'/g, "\\'")}', ${f.calories})">${f.name}<span class="cal">${f.calories} kcal</span></div>`
+  ).join('');
+  suggestionsDiv.classList.add('show');
+}
+
+function selectFood(meal, id, name, calories) {
+  const row = document.querySelector(`.meal-food-row[data-meal="${meal}"][data-item-id="${id}"]`);
+  row.querySelector('.food-search-input').value = name;
+  row.querySelector('.cal-display').value = calories;
+  row.querySelector('.cal-display').dataset.calories = calories;
+  document.getElementById('suggestions_' + meal + '_' + id).classList.remove('show');
+  updateDietCalories();
+}
+
+function updateDietCalories() {
+  let total = 0;
+  document.querySelectorAll('.meal-food-row').forEach(row => {
+    const cal = parseInt(row.querySelector('.cal-display').dataset.calories) || 0;
+    const servings = parseFloat(row.querySelector('.serving-input').value) || 1;
+    total += cal * servings;
+  });
+  document.getElementById('dtTotalCal').textContent = total;
+  const target = parseInt(document.getElementById('dtTargetCal').value) || 0;
+  const diffEl = document.getElementById('dtCalDiff');
+  if (target) {
+    const diff = total - target;
+    if (diff > 0) {
+      diffEl.textContent = `(+${diff} over target)`;
+      diffEl.style.color = '#dc3545';
+    } else if (diff < 0) {
+      diffEl.textContent = `(${diff} under target)`;
+      diffEl.style.color = '#ffc107';
+    } else {
+      diffEl.textContent = '(On target!)';
+      diffEl.style.color = '#28a745';
+    }
+  } else {
+    diffEl.textContent = '';
+  }
+}
+
+async function saveDietTemplate() {
+  const name = document.getElementById('dtName').value.trim();
+  const targetCalories = parseInt(document.getElementById('dtTargetCal').value) || 0;
+  const description = document.getElementById('dtDescription').value.trim();
+  if (!name) { showToast('Template name required', 'error'); return; }
+
+  const meals = {};
+  ['breakfast', 'lunch', 'snacks', 'dinner'].forEach(meal => {
+    const items = [];
+    document.querySelectorAll(`.meal-food-row[data-meal="${meal}"]`).forEach(row => {
+      const foodName = row.querySelector('.food-search-input').value.trim();
+      const servings = parseFloat(row.querySelector('.serving-input').value) || 1;
+      const calories = parseInt(row.querySelector('.cal-display').dataset.calories) || 0;
+      if (foodName) items.push({ name: foodName, servings, calories: calories * servings });
+    });
+    if (items.length) meals[meal] = items;
+  });
+
+  try {
+    await apiCall('POST', '/api/templates/diet', { name, targetCalories, meals, description });
+    showToast('Diet template created!');
+    closeDietTemplateCreator();
+    loadDietTemplates();
+  } catch (e) {}
+}
+
+// WORKOUT TEMPLATES
+async function loadWorkoutTemplates() {
+  try {
+    const data = await apiCall('GET', '/api/templates');
+    state.workoutTemplates = data.workoutTemplates || [];
+    if (!state.exercises.length) {
+      try { const exData = await apiCall('GET', '/api/exercises'); state.exercises = exData.exercises || []; } catch(e) {}
+    }
+    renderWorkoutTemplates();
+  } catch (e) {}
+}
+
+function renderWorkoutTemplates() {
+  const list = document.getElementById('workoutTemplatesList');
+  if (!state.workoutTemplates.length) {
+    list.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">💪</div><p>No workout templates yet. Create one!</p></div>';
+    return;
+  }
+  list.innerHTML = state.workoutTemplates.map(t => `
+    <div class="template-card workout-card">
+      <h4>${t.name}</h4>
+      <p>${t.description || 'No description'}</p>
+      <div class="tags">
+        <span class="badge badge-info">${t.difficulty || 'All'}</span>
+        <span class="badge badge-workout">${(t.exercises || []).length} exercises</span>
+      </div>
+      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteWorkoutTemplate('${t._id || t.id}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+async function deleteWorkoutTemplate(id) {
+  if (!confirm('Delete this workout template?')) return;
+  try {
+    await apiCall('DELETE', '/api/templates/workout/' + id);
+    showToast('Deleted!');
+    loadWorkoutTemplates();
+  } catch (e) {}
+}
+
+// WORKOUT TEMPLATE CREATOR
+let selectedWorkoutExercises = [];
+
+function openWorkoutTemplateCreator() {
+  document.getElementById('wtName').value = '';
+  document.getElementById('wtDifficulty').value = 'beginner';
+  document.getElementById('wtDescription').value = '';
+  document.getElementById('wtExerciseSearch').value = '';
+  selectedWorkoutExercises = [];
+  if (!state.exercises.length) {
+    apiCall('GET', '/api/exercises').then(d => {
+      state.exercises = d.exercises || [];
+      renderExercisePicker();
+    }).catch(() => {});
+  }
+  renderExercisePicker();
+  renderSelectedExercises();
+  document.getElementById('workoutTemplateModal').classList.add('show');
+}
+
+function closeWorkoutTemplateCreator() { document.getElementById('workoutTemplateModal').classList.remove('show'); }
+
+function renderExercisePicker() {
+  const search = document.getElementById('wtExerciseSearch').value.toLowerCase();
+  const filtered = state.exercises.filter(e => e.name.toLowerCase().includes(search));
+  document.getElementById('exercisePicker').innerHTML = filtered.map(e => `
+    <div class="exercise-picker-item" onclick="toggleExerciseSelection('${e._id || e.id}')">
+      ${e.gifUrl ? `<img src="${e.gifUrl}" alt="${e.name}" onerror="this.style.display='none'">` : ''}
+      <div class="name">${e.name}</div>
+      <p>${e.category} · ${e.muscleGroup || ''}</p>
+    </div>
+  `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">No exercises found</div>';
+}
+
+function filterExercisePicker() { renderExercisePicker(); }
+
+function toggleExerciseSelection(id) {
+  const existing = selectedWorkoutExercises.findIndex(e => e.id === id);
+  if (existing >= 0) {
+    selectedWorkoutExercises.splice(existing, 1);
+  } else {
+    const ex = state.exercises.find(e => (e._id || e.id) === id);
+    if (ex) selectedWorkoutExercises.push({ id: ex._id || ex.id, name: ex.name, sets: 3, reps: 10, duration: 0 });
+  }
+  renderSelectedExercises();
+  renderExercisePicker();
+}
+
+function renderSelectedExercises() {
+  const container = document.getElementById('selectedExercises');
+  if (!selectedWorkoutExercises.length) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Click exercises above to add them</div>';
+    return;
+  }
+  container.innerHTML = selectedWorkoutExercises.map((e, i) => `
+    <div class="selected-exercise-item" draggable="true" data-index="${i}"
+         ondragstart="dragExerciseStart(event, ${i})" ondragover="dragExerciseOver(event)" ondrop="dragExerciseDrop(event, ${i})">
+      <span class="drag-handle">⋮⋮</span>
+      <span style="flex:1;font-weight:500;">${e.name}</span>
+      <div class="exercise-details">
+        <div><label>Sets</label><input type="number" value="${e.sets}" min="1" onchange="selectedWorkoutExercises[${i}].sets=parseInt(this.value)"></div>
+        <div><label>Reps</label><input type="number" value="${e.reps}" min="1" onchange="selectedWorkoutExercises[${i}].reps=parseInt(this.value)"></div>
+        <div><label>Duration(s)</label><input type="number" value="${e.duration}" min="0" onchange="selectedWorkoutExercises[${i}].duration=parseInt(this.value)"></div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="selectedWorkoutExercises.splice(${i},1);renderSelectedExercises();">✕</button>
+    </div>
+  `).join('');
+}
+
+let dragExerciseIndex = null;
+function dragExerciseStart(e, index) { dragExerciseIndex = index; e.dataTransfer.effectAllowed = 'move'; }
+function dragExerciseOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+function dragExerciseDrop(e, targetIndex) {
+  e.preventDefault();
+  if (dragExerciseIndex === null || dragExerciseIndex === targetIndex) return;
+  const item = selectedWorkoutExercises.splice(dragExerciseIndex, 1)[0];
+  selectedWorkoutExercises.splice(targetIndex, 0, item);
+  dragExerciseIndex = null;
+  renderSelectedExercises();
+}
+
+function renderSelectedExercises() {
+  const container = document.getElementById('selectedExercises');
+  if (!selectedWorkoutExercises.length) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">Click exercises above to add them</p>';
+    return;
+  }
+  container.innerHTML = selectedWorkoutExercises.map((ex, i) => {
+    const exercise = state.exercises.find(e => (e._id || e.id) === ex.id);
+    return `<div class="selected-exercise-item" draggable="true" ondragstart="dragWorkoutExercise(event, ${i})" ondragover="event.preventDefault()" ondrop="dropWorkoutExercise(event, ${i})">
+      <span class="drag-handle">⋮⋮</span>
+      <div style="width:40px;height:30px;background:#111;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+        ${exercise?.gifUrl ? `<img src="${exercise.gifUrl}" style="width:100%;height:100%;object-fit:cover;">` : '<span style="font-size:10px;">🏋️</span>'}
+      </div>
+      <div style="flex:1;">
+        <strong style="font-size:13px;">${exercise?.name || ex.id}</strong>
+      </div>
+      <div class="exercise-details">
+        <div><input type="number" value="${ex.sets || 3}" min="1" onchange="updateWorkoutExercise(${i},'sets',this.value)"><label>Sets</label></div>
+        <div><input type="number" value="${ex.reps || 12}" min="1" onchange="updateWorkoutExercise(${i},'reps',this.value)"><label>Reps</label></div>
+        <div><input type="text" value="${ex.duration || ''}" placeholder="--" onchange="updateWorkoutExercise(${i},'duration',this.value)" style="width:70px;"><label>Duration</label></div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="removeWorkoutExercise(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleExerciseSelection(exerciseId) {
+  const idx = selectedWorkoutExercises.findIndex(e => e.id === exerciseId);
+  if (idx >= 0) {
+    selectedWorkoutExercises.splice(idx, 1);
+  } else {
+    selectedWorkoutExercises.push({ id: exerciseId, sets: 3, reps: 12, duration: '' });
+  }
+  document.querySelectorAll('.exercise-picker-item').forEach(item => {
+    const id = item.onclick.toString().match(/'([^']+)'/)?.[1];
+    const isSelected = selectedWorkoutExercises.some(e => e.id === id);
+    item.classList.toggle('selected', isSelected);
+  });
+  renderSelectedExercises();
+}
+
+function updateWorkoutExercise(index, field, value) {
+  selectedWorkoutExercises[index][field] = field === 'duration' ? value : parseInt(value) || 1;
+}
+
+function removeWorkoutExercise(index) {
+  selectedWorkoutExercises.splice(index, 1);
+  renderSelectedExercises();
+}
+
+function filterExercisePicker() { renderExercisePicker(); }
+
+function dragWorkoutExercise(e, index) {
+  e.dataTransfer.setData('text/plain', index);
+}
+
+function dropWorkoutExercise(e, targetIndex) {
+  e.preventDefault();
+  const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'));
+  const item = selectedWorkoutExercises.splice(sourceIndex, 1)[0];
+  selectedWorkoutExercises.splice(targetIndex, 0, item);
+  renderSelectedExercises();
+}
+
+async function saveWorkoutTemplate() {
+  const name = document.getElementById('wtName').value.trim();
+  const difficulty = document.getElementById('wtDifficulty').value;
+  const description = document.getElementById('wtDescription').value.trim();
+  if (!name) { showToast('Template name required', 'error'); return; }
+  if (!selectedWorkoutExercises.length) { showToast('Add at least one exercise', 'error'); return; }
+  try {
+    await apiCall('POST', '/api/templates/workout', { name, difficulty, exercises: selectedWorkoutExercises, description });
+    showToast('Workout template created!');
+    closeWorkoutTemplateCreator();
+    loadWorkoutTemplates();
+  } catch (e) {}
+}
+
+// CHART ASSIGNMENT
+let chartAvailableTemplates = [];
+
+async function loadChartData() {
+  try {
+    const [memData, tplData] = await Promise.all([
+      state.members.length ? { members: state.members } : apiCall('GET', '/api/members'),
+      apiCall('GET', '/api/templates')
+    ]);
+    state.members = memData.members || [];
+    state.dietTemplates = tplData.dietTemplates || [];
+    state.workoutTemplates = tplData.workoutTemplates || [];
+
+    const sel = document.getElementById('chartMemberSelect');
+    sel.innerHTML = '<option value="">Select Member</option>' + state.members.map(m =>
+      `<option value="${m._id || m.id}">${m.name}</option>`
+    ).join('');
+
+    renderAvailableCharts();
+  } catch (e) {}
+}
+
+function switchChartTab(tab) {
+  state.chartTab = tab;
+  state.selectedChartTemplate = null;
+  document.querySelectorAll('#page-charts .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#page-charts .tab')[tab === 'diet' ? 0 : 1].classList.add('active');
+  renderAvailableCharts();
+}
+
+function renderAvailableCharts() {
+  const container = document.getElementById('availableCharts');
+  if (state.chartTab === 'diet') {
+    if (!state.dietTemplates.length) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">🥗</div><p>No diet templates. Create one first.</p></div>';
+      return;
+    }
+    container.innerHTML = state.dietTemplates.map(t => {
+      let totalCal = 0;
+      let meals = t.meals;
+      if (typeof meals === 'string') { try { meals = JSON.parse(meals); } catch(e) { meals = {}; } }
+      if (meals) {
+        for (const meal of Object.values(meals)) {
+          if (Array.isArray(meal)) meal.forEach(m => totalCal += (m.calories || 0) * (m.servings || 1));
+        }
+      }
+      return `<div class="template-card diet-card" onclick="selectChartTemplate('${t._id || t.id}', 'diet', this)">
+        <h4>${t.name}</h4>
+        <p>${t.description || ''}</p>
+        <div class="tags"><span class="badge badge-diet">${totalCal} kcal</span></div>
+      </div>`;
+    }).join('');
+  } else {
+    if (!state.workoutTemplates.length) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">💪</div><p>No workout templates. Create one first.</p></div>';
+      return;
+    }
+    container.innerHTML = state.workoutTemplates.map(t =>
+      `<div class="template-card workout-card" onclick="selectChartTemplate('${t._id || t.id}', 'workout', this)">
+        <h4>${t.name}</h4>
+        <p>${t.description || ''}</p>
+        <div class="tags"><span class="badge badge-info">${t.difficulty || 'All'}</span> <span class="badge badge-workout">${(t.exercises || []).length} exercises</span></div>
+      </div>`
+    ).join('');
+  }
+}
+
+function selectChartTemplate(id, type, el) {
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedChartTemplate = { id, type };
+}
+
+async function loadMemberCharts() {
+  const memberId = document.getElementById('chartMemberSelect').value;
+  if (!memberId) {
+    document.getElementById('assignedCharts').innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>Select a member to view assigned charts</p></div>';
+    return;
+  }
+  try {
+    const data = await apiCall('GET', '/api/charts/member/' + memberId);
+    state.memberCharts = data.charts || [];
+    renderAssignedCharts();
+  } catch (e) {}
+}
+
+function renderAssignedCharts() {
+  const container = document.getElementById('assignedCharts');
+  if (!state.memberCharts.length) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No charts assigned yet</p></div>';
+    return;
+  }
+  container.innerHTML = state.memberCharts.map(c => {
+    let chartName = 'Chart';
+    let chartDetail = '';
+    try {
+      const content = JSON.parse(c.content);
+      chartName = content.name || 'Chart';
+      if (c.type === 'diet' && content.meals) {
+        let tc = 0;
+        const meals = content.meals;
+        if (typeof meals === 'object') {
+          for (const meal of Object.values(meals)) {
+            if (Array.isArray(meal)) meal.forEach(m => tc += (m.calories || 0) * (m.servings || 1));
+          }
+        }
+        chartDetail = tc + ' kcal';
+      } else if (c.type === 'workout' && content.exercises) {
+        chartDetail = content.exercises.length + ' exercises';
+      }
+    } catch(e) {
+      chartName = c.content || 'Chart';
+    }
+    return `<div class="assigned-chart-item" style="border-left-color: ${c.type === 'diet' ? 'var(--diet-green)' : 'var(--workout-blue)'};">
+      <div class="chart-info">
+        <h5>${chartName}</h5>
+        <p><span class="badge badge-${c.type === 'diet' ? 'diet' : 'workout'}">${c.type}</span> ${chartDetail ? chartDetail + ' · ' : ''}Assigned: ${c.startDate ? new Date(c.startDate).toLocaleDateString() : 'N/A'}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function assignSelectedChart() {
+  const memberId = document.getElementById('chartMemberSelect').value;
+  if (!memberId) { showToast('Select a member first', 'error'); return; }
+  if (!state.selectedChartTemplate) { showToast('Select a template first', 'error'); return; }
+  const { id, type } = state.selectedChartTemplate;
+  const templates = type === 'diet' ? state.dietTemplates : state.workoutTemplates;
+  const tpl = templates.find(t => (t._id || t.id) === id);
+  if (!tpl) { showToast('Template not found', 'error'); return; }
+  let tplData = { name: tpl.name, description: tpl.description };
+  if (type === 'diet') {
+    let meals = tpl.meals;
+    if (typeof meals === 'string') { try { meals = JSON.parse(meals); } catch(e) { meals = {}; } }
+    tplData.meals = meals;
+    tplData.targetCalories = tpl.targetCalories;
+  } else {
+    let exercises = tpl.exercises;
+    if (typeof exercises === 'string') { try { exercises = JSON.parse(exercises); } catch(e) { exercises = []; } }
+    tplData.exercises = exercises;
+    tplData.difficulty = tpl.difficulty;
+  }
+  try {
+    await apiCall('POST', '/api/charts', {
+      memberId,
+      type,
+      content: JSON.stringify(tplData),
+      startDate: new Date().toISOString()
+    });
+    showToast('Chart assigned successfully!');
+    state.selectedChartTemplate = null;
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    loadMemberCharts();
+  } catch (e) {}
+}
+
+// Global click handler to close food suggestions
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.food-search-container')) {
+    document.querySelectorAll('.food-suggestions').forEach(s => s.classList.remove('show'));
+  }
+});
+
+// Login on Enter key
+document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') handleLogin();
+});
+
+// Init
+(function init() {
+  const token = localStorage.getItem('rawfit_token');
+  const user = localStorage.getItem('rawfit_user');
+  if (token && user) {
+    state.token = token;
+    state.user = JSON.parse(user);
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('hidden');
+    document.getElementById('currentUser').textContent = state.user.name || state.user.phone || 'Admin';
+    loadDashboard();
+  }
+})();
+</script>
+</body>
+</html>
