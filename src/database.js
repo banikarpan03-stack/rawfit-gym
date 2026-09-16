@@ -29,6 +29,7 @@ function getDb() {
 async function initDatabase() {
   if (isPostgres) {
     const { pool } = getDb();
+    await pool.query("DROP TABLE IF EXISTS exercises CASCADE");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -274,32 +275,24 @@ async function seedDatabase(db) {
     }
     const exCount = (await pool.query("SELECT COUNT(*) as c FROM exercises")).rows[0].c;
     if (exCount === 0) {
-      const exercises = [
-        ["Bench Press", "chest", "Lie on bench, lower bar to chest, push up", "intermediate", "chest"],
-        ["Push-ups", "chest", "Standard push-up position, lower body to ground", "beginner", "chest"],
-        ["Dumbbell Fly", "chest", "Lie on bench, extend arms with dumbbells, lower in arc", "intermediate", "chest"],
-        ["Incline Bench Press", "chest", "Bench press on inclined bench", "intermediate", "upper chest"],
-        ["Pull-ups", "back", "Hang from bar, pull body up", "intermediate", "lats"],
-        ["Deadlift", "back", "Lift barbell from ground to hip level", "advanced", "lower back"],
-        ["Bent Over Row", "back", "Bend forward, pull barbell to abdomen", "intermediate", "middle back"],
-        ["Lat Pulldown", "back", "Pull bar down to chest on cable machine", "beginner", "lats"],
-        ["Squats", "legs", "Lower body as if sitting, stand back up", "intermediate", "quadriceps"],
-        ["Leg Press", "legs", "Push weight away with legs on machine", "beginner", "quadriceps"],
-        ["Lunges", "legs", "Step forward, lower body, return", "beginner", "quadriceps"],
-        ["Calf Raises", "legs", "Rise up on toes, lower back down", "beginner", "calves"],
-        ["Bicep Curls", "arms", "Curl dumbbell up to shoulder", "beginner", "biceps"],
-        ["Tricep Dips", "arms", "Dip body down on parallel bars", "intermediate", "triceps"],
-        ["Hammer Curls", "arms", "Curl with neutral grip", "beginner", "biceps"],
-        ["Tricep Pushdown", "arms", "Push cable down with straight bar", "beginner", "triceps"],
-        ["Overhead Press", "shoulders", "Press barbell overhead from shoulders", "intermediate", "shoulders"],
-        ["Lateral Raises", "shoulders", "Raise dumbbells to sides", "beginner", "side delts"],
-        ["Front Raises", "shoulders", "Raise dumbbells to front", "beginner", "front delts"],
-        ["Plank", "core", "Hold push-up position on elbows", "beginner", "abs"],
-        ["Crunches", "core", "Lie on back, curl shoulders up", "beginner", "abs"],
-        ["Leg Raises", "core", "Lie on back, raise legs up", "intermediate", "lower abs"],
-        ["Russian Twists", "core", "Sit, twist torso side to side", "intermediate", "obliques"],
-      ];
-      for (const e of exercises) await pool.query("INSERT INTO exercises (id, name, category, description, difficulty, muscleGroup) VALUES ($1,$2,$3,$4,$5,$6)", [uuidv4(), ...e]);
+      const fs = require("fs");
+      const path = require("path");
+      const exDir = path.join(__dirname, "..", "public", "exercises");
+      if (fs.existsSync(exDir)) {
+        const categories = fs.readdirSync(exDir).filter(f => fs.statSync(path.join(exDir, f)).isDirectory());
+        for (const cat of categories) {
+          const catDir = path.join(exDir, cat);
+          const thumbs = fs.readdirSync(catDir).filter(f => f.endsWith(".thumb.webp"));
+          for (const t of thumbs) {
+            const slug = t.replace(".thumb.webp", "");
+            const name = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+            const gifUrl = "/exercises/" + cat + "/" + t;
+            const id = uuidv4();
+            await pool.query("INSERT INTO exercises (id, name, category, difficulty, muscleGroup, gifUrl) VALUES ($1,$2,$3,$4,$5,$6)", [id, name, cat, "beginner", cat, gifUrl]);
+          }
+        }
+      }
+      console.log("Exercises seeded from filesystem!");
     }
     const dtCount = (await pool.query("SELECT COUNT(*) as c FROM diet_templates")).rows[0].c;
     if (dtCount === 0) {
