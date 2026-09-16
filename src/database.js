@@ -29,7 +29,6 @@ function getDb() {
 async function initDatabase() {
   if (isPostgres) {
     const { pool } = getDb();
-    const dropResult = console.log("DROP exercises result:", dropResult.command);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
