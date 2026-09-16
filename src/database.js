@@ -10,7 +10,7 @@ function getDb() {
   if (isPostgres) {
     if (!_pgPool) {
       const { Pool } = require("pg");
-      _pgPool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      _pgPool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 });
     }
     return { pool: _pgPool, query: (text, params) => _pgPool.query(text, params) };
   }
