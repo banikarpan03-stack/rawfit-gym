@@ -30,6 +30,16 @@ async function initDatabase() {
   if (isPostgres) {
     const { pool } = getDb();
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS packages (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        duration INTEGER NOT NULL,
+        price REAL NOT NULL,
+        description TEXT,
+        isActive INTEGER DEFAULT 1,
+        createdAt TEXT DEFAULT (NOW())
+      );
+
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         uniqueCode TEXT UNIQUE NOT NULL,
@@ -52,16 +62,6 @@ async function initDatabase() {
         createdAt TEXT DEFAULT (NOW()),
         updatedAt TEXT DEFAULT (NOW()),
         FOREIGN KEY (packageId) REFERENCES packages(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS packages (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        duration INTEGER NOT NULL,
-        price REAL NOT NULL,
-        description TEXT,
-        isActive INTEGER DEFAULT 1,
-        createdAt TEXT DEFAULT (NOW())
       );
 
       CREATE TABLE IF NOT EXISTS attendance (
@@ -143,6 +143,16 @@ async function initDatabase() {
 
   const db = getDb();
   db.exec(`
+    CREATE TABLE IF NOT EXISTS packages (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      duration INTEGER NOT NULL,
+      price REAL NOT NULL,
+      description TEXT,
+      isActive INTEGER DEFAULT 1,
+      createdAt TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       uniqueCode TEXT UNIQUE NOT NULL,
@@ -165,16 +175,6 @@ async function initDatabase() {
       createdAt TEXT DEFAULT (datetime('now')),
       updatedAt TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (packageId) REFERENCES packages(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS packages (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      duration INTEGER NOT NULL,
-      price REAL NOT NULL,
-      description TEXT,
-      isActive INTEGER DEFAULT 1,
-      createdAt TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS attendance (
