@@ -1109,6 +1109,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <h1 class="page-title" style="margin:0;">Exercise Library</h1>
         <button class="btn btn-primary" onclick="openExerciseModal()">+ Add Exercise</button>
       </div>
+      <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="exerciseSearch" placeholder="Search exercises..." oninput="filterAdminExercises()" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;">
+      </div>
+      <div id="exerciseFilters" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;"></div>
       <div class="grid-3" id="exercisesList"></div>
     </div>
 
@@ -1876,13 +1880,36 @@ async function deletePackage(id) {
 }
 
 // EXERCISES
-async function loadExercises() {
-  try {
-    const data = await apiCall('GET', '/api/exercises');
-    state.exercises = data.exercises || [];
-    renderExercises(state.exercises);
-  } catch (e) {}
-}
+  let adminExerciseFilter = 'all';
+
+  async function loadExercises() {
+    try {
+      const data = await apiCall('GET', '/api/exercises');
+      state.exercises = data.exercises || [];
+      state.exercises.sort((a, b) => (a.category || '').localeCompare(b.category || '') || (a.name || '').localeCompare(b.name || ''));
+      const cats = [...new Set(state.exercises.map(e => e.category))].sort();
+      document.getElementById('exerciseFilters').innerHTML =
+        '<span onclick="filterAdminExercises(\'all\')" class="badge badge-blue" style="cursor:pointer;padding:6px 12px">All (' + state.exercises.length + ')</span>' +
+        cats.map(c => {
+          const count = state.exercises.filter(e => e.category === c).length;
+          return '<span onclick="filterAdminExercises(\'' + c + '\')" class="badge" style="cursor:pointer;padding:6px 12px;background:var(--bg-secondary,#f3f4f6)">' + c.charAt(0).toUpperCase() + c.slice(1) + ' (' + count + ')</span>';
+        }).join('');
+      filterAdminExercises(adminExerciseFilter);
+    } catch (e) {}
+  }
+
+  function filterAdminExercises(cat) {
+    if (cat) adminExerciseFilter = cat;
+    const search = (document.getElementById('exerciseSearch')?.value || '').toLowerCase();
+    let list = adminExerciseFilter === 'all' ? state.exercises : state.exercises.filter(e => e.category === adminExerciseFilter);
+    if (search) list = list.filter(e => (e.name || '').toLowerCase().includes(search) || (e.muscleGroup || '').toLowerCase().includes(search) || (e.category || '').toLowerCase().includes(search));
+    renderExercises(list);
+    document.querySelectorAll('#exerciseFilters .badge').forEach(b => {
+      const isActive = b.getAttribute('onclick').includes("'" + adminExerciseFilter + "'");
+      if (isActive) { b.style.background = 'var(--primary)'; b.style.color = '#fff'; }
+      else { b.style.background = 'var(--bg-secondary,#f3f4f6)'; b.style.color = 'var(--text)'; }
+    });
+  }
 
 function renderExercises(list) {
   document.getElementById('exercisesList').innerHTML = list.length ? list.map(e => `

@@ -91,6 +91,7 @@ h2{font-size:18px;font-weight:600;margin-bottom:12px}
 <div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>Exercise Library</h1></div>
 <div id="exerciseGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:12px">📍</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Exercise library is available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
 <div id="exerciseContent" class="hidden">
+<input type="text" id="exerciseSearch" placeholder="Search exercises..." oninput="searchMemberExercises()" style="width:100%;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="exerciseFilters"></div>
 <div id="exerciseList"></div>
 </div>
@@ -263,8 +264,11 @@ async function loadExercises() {
   renderExercises();
 }
 function filterExercises(cat) { exerciseFilter = cat; renderExercises(); }
+function searchMemberExercises() { renderExercises(); }
 function renderExercises() {
-  const list = exerciseFilter === 'all' ? allExercises : allExercises.filter(e => e.category === exerciseFilter);
+  const search = (document.getElementById('exerciseSearch')?.value || '').toLowerCase();
+  let list = exerciseFilter === 'all' ? allExercises : allExercises.filter(e => e.category === exerciseFilter);
+  if (search) list = list.filter(e => (e.name || '').toLowerCase().includes(search) || (e.muscleGroup || '').toLowerCase().includes(search) || (e.category || '').toLowerCase().includes(search));
   document.getElementById('exerciseList').innerHTML = list.map(e => {
     let gifHtml = '';
     if (e.gifUrl) {
