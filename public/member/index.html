@@ -272,7 +272,7 @@ function renderExercises() {
   document.getElementById('exerciseList').innerHTML = list.map(e => {
     let gifHtml = '';
     if (e.gifUrl) {
-      gifHtml = '<img src="' + e.gifUrl + '" alt="' + e.name + '" class="exercise-gif" loading="lazy">';
+      gifHtml = '<img src="' + e.gifUrl + '" alt="' + e.name + '" class="exercise-gif" loading="lazy" onclick="openGifLightbox(\'' + e.gifUrl + '\')" style="cursor:pointer">';
     }
     let videoHtml = '';
     if (e.videoUrl) {
@@ -323,11 +323,19 @@ async function loadProfile() {
     .filter(r => r[0] || r[1] === '').map(r => r[0] === '' ? '<div style="border-bottom:1px solid #f3f4f6;margin:8px 0"></div>' :
     '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6"><span style="color:#6b7280">' + r[0] + '</span><span style="font-weight:500">' + r[1] + '</span></div>').join('');
 }
+function openGifLightbox(url) {
+  document.getElementById('gifLightboxImg').src = url;
+  document.getElementById('gifLightbox').style.display = 'flex';
+}
 window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('splash').classList.add('hidden'), 500);
   token = localStorage.getItem('token'); user = JSON.parse(localStorage.getItem('user') || 'null');
   if (token && user) startApp(); else show('page-login');
 });
 </script>
+<div id="gifLightbox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;justify-content:center;align-items:center;cursor:pointer" onclick="this.style.display='none'">
+  <img id="gifLightboxImg" src="" style="max-width:90%;max-height:90%;border-radius:12px">
+  <span style="position:absolute;top:20px;right:30px;font-size:36px;color:#fff;cursor:pointer" onclick="document.getElementById('gifLightbox').style.display='none'">&times;</span>
+</div>
 </body>
 </html>

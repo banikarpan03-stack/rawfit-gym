@@ -6,21 +6,21 @@
 <title>RAWfit Admin Panel</title>
 <style>
 :root {
-  --primary: #ff4d4d;
-  --primary-dark: #cc0000;
-  --secondary: #1a1a2e;
-  --bg: #0f0f1a;
-  --card: #1a1a2e;
-  --card-hover: #252540;
-  --text: #e0e0e0;
-  --text-muted: #888;
-  --border: #333;
-  --success: #28a745;
-  --warning: #ffc107;
-  --info: #17a2b8;
-  --danger: #dc3545;
-  --diet-green: #28a745;
-  --workout-blue: #007bff;
+  --primary: #e63946;
+  --primary-dark: #c5303c;
+  --secondary: #ffffff;
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --card-hover: #f0f0f0;
+  --text: #1a1a1a;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --success: #16a34a;
+  --warning: #eab308;
+  --info: #0ea5e9;
+  --danger: #dc2626;
+  --diet-green: #16a34a;
+  --workout-blue: #2563eb;
   --sidebar-width: 250px;
   --header-height: 60px;
 }
@@ -50,7 +50,7 @@ a { color: var(--primary); text-decoration: none; }
   border-radius: 12px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
 }
 
 .login-box h1 {
@@ -82,7 +82,7 @@ a { color: var(--primary); text-decoration: none; }
 .form-group textarea {
   width: 100%;
   padding: 10px 14px;
-  background: #252540;
+  background: #f9fafb;
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
@@ -120,7 +120,7 @@ a { color: var(--primary); text-decoration: none; }
 .btn-warning:hover { background: #e0a800; }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-danger:hover { background: #c82333; }
-.btn-secondary { background: #444; color: #fff; }
+.btn-secondary { background: #6b7280; color: #fff; }
 .btn-secondary:hover { background: #555; }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .btn-block { width: 100%; justify-content: center; }
@@ -317,7 +317,7 @@ th {
   top: 0;
 }
 
-tr:hover td { background: rgba(255,255,255,0.02); }
+tr:hover td { background: rgba(0,0,0,0.02); }
 
 .badge {
   display: inline-block;
@@ -344,7 +344,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .search-box input {
   width: 100%;
   padding: 8px 14px 8px 36px;
-  background: #252540;
+  background: #f3f4f6;
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
@@ -427,7 +427,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   justify-content: space-between;
   align-items: center;
   padding: 10px 14px;
-  background: #252540;
+  background: #f3f4f6;
   border-radius: 8px;
   margin-bottom: 8px;
 }
@@ -453,7 +453,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .exercise-card .gif-container {
   width: 100%;
   height: 160px;
-  background: #111;
+  background: #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -504,7 +504,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 /* Meal Section */
 .meal-section {
-  background: #252540;
+  background: #f3f4f6;
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -530,7 +530,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .meal-food-row input,
 .meal-food-row select {
   padding: 8px 10px;
-  background: #1a1a2e;
+  background: #f9fafb;
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
@@ -544,7 +544,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   top: 100%;
   left: 0;
   right: 0;
-  background: #1a1a2e;
+  background: #f9fafb;
   border: 1px solid var(--border);
   border-radius: 8px;
   max-height: 200px;
@@ -693,7 +693,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #252540;
+  background: #f3f4f6;
   border-radius: 8px;
   margin-bottom: 8px;
   border-left: 3px solid var(--primary);
@@ -706,7 +706,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
 /* Toast */
@@ -783,7 +783,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   align-items: center;
   gap: 10px;
   padding: 10px;
-  background: #252540;
+  background: #f3f4f6;
   border-radius: 8px;
   margin-bottom: 8px;
 }
@@ -798,7 +798,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .selected-exercise-item input {
   width: 60px;
   padding: 4px 8px;
-  background: #1a1a2e;
+  background: #f9fafb;
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text);
@@ -998,7 +998,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </div>
             <div class="stat-card">
               <h3>Discount (%)</h3>
-              <input type="number" id="admDiscount" value="0" min="0" max="100" style="width:100%;padding:8px;background:#252540;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:24px;font-weight:700;text-align:center;" oninput="calcAdmissionPrice()">
+              <input type="number" id="admDiscount" value="0" min="0" max="100" style="width:100%;padding:8px;background:#f3f4f6;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:24px;font-weight:700;text-align:center;" oninput="calcAdmissionPrice()">
             </div>
             <div class="stat-card">
               <h3>Final Price</h3>
@@ -1015,7 +1015,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
         <h1 class="page-title" style="margin:0;">Attendance</h1>
         <div style="display:flex; gap:10px; align-items:center;">
-          <select id="attendanceMemberSelect" style="padding:8px;background:#252540;border:1px solid var(--border);border-radius:8px;color:var(--text);"></select>
+          <select id="attendanceMemberSelect" style="padding:8px;background:#f3f4f6;border:1px solid var(--border);border-radius:8px;color:var(--text);"></select>
           <button class="btn btn-success btn-sm" onclick="doCheckin()">Check In</button>
           <button class="btn btn-warning btn-sm" onclick="doCheckout()">Check Out</button>
         </div>
@@ -1163,6 +1163,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <button class="btn btn-primary" onclick="savePackage()">Save</button>
     </div>
   </div>
+</div>
+
+<!-- GIF Lightbox -->
+<div id="gifLightbox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;justify-content:center;align-items:center;cursor:pointer" onclick="this.style.display='none'">
+  <img id="gifLightboxImg" src="" style="max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 0 40px rgba(0,0,0,0.5)">
+  <span style="position:absolute;top:20px;right:30px;font-size:36px;color:#fff;cursor:pointer" onclick="document.getElementById('gifLightbox').style.display='none'">&times;</span>
 </div>
 
 <!-- Exercise Modal -->
@@ -1905,17 +1911,18 @@ async function deletePackage(id) {
     if (search) list = list.filter(e => (e.name || '').toLowerCase().includes(search) || (e.muscleGroup || '').toLowerCase().includes(search) || (e.category || '').toLowerCase().includes(search));
     renderExercises(list);
     document.querySelectorAll('#exerciseFilters .badge').forEach(b => {
-      const isActive = b.getAttribute('onclick').includes("'" + adminExerciseFilter + "'");
-      if (isActive) { b.style.background = 'var(--primary)'; b.style.color = '#fff'; }
-      else { b.style.background = 'var(--bg-secondary,#f3f4f6)'; b.style.color = 'var(--text)'; }
+      const isAll = b.getAttribute('onclick').includes("'all'");
+      const isActive = isAll ? adminExerciseFilter === 'all' : b.getAttribute('onclick').includes("'" + adminExerciseFilter + "'");
+      if (isActive) { b.style.background = 'var(--primary)'; b.style.color = '#fff'; b.style.border = '1px solid var(--primary)'; }
+      else { b.style.background = '#f3f4f6'; b.style.color = '#374151'; b.style.border = '1px solid #e5e7eb'; }
     });
   }
 
 function renderExercises(list) {
   document.getElementById('exercisesList').innerHTML = list.length ? list.map(e => `
     <div class="exercise-card">
-      <div class="gif-container">
-        ${e.gifUrl ? `<img src="${e.gifUrl}" alt="${e.name}" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-muted)\\'>🏋️ No GIF</div>'">` :
+      <div class="gif-container" ${e.gifUrl ? `onclick="openGifLightbox('${e.gifUrl}')" style="cursor:pointer"` : ''}>
+        ${e.gifUrl ? `<img src="${e.gifUrl}" alt="${e.name}" style="pointer-events:none" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-muted)\\'>🏋️ No GIF</div>'">` :
           `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:48px;">🏋️</div>`}
       </div>
       <div class="exercise-info">
@@ -1927,6 +1934,11 @@ function renderExercises(list) {
       </div>
     </div>
   `).join('') : '<div class="empty-state"><div class="icon">🏋️</div><p>No exercises yet</p></div>';
+}
+
+function openGifLightbox(url) {
+  document.getElementById('gifLightboxImg').src = url;
+  document.getElementById('gifLightbox').style.display = 'flex';
 }
 
 function openExerciseModal() {
