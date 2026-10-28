@@ -3,7 +3,7 @@ services:
     name: rawfit-gym
     runtime: node
     plan: free
-    buildCommand: npm install --production
+    buildCommand: npm ci --omit=dev
     startCommand: node src/server.js
     healthCheckPath: /ping
     envVars:

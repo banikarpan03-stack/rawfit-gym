@@ -1,5 +1,18 @@
 node_modules/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 server.log
 .env
+.env.local
+
+# Local database files. data/foods.json IS committed — it seeds the foods table.
+data/*.db
+data/*.db-*
+
+# Tooling
+coverage/
+*.log
+.DS_Store
+.eslintcache

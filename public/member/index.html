@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2563eb">
 <title>RAWfit Gym</title>
@@ -89,7 +89,7 @@ h2{font-size:18px;font-weight:600;margin-bottom:12px}
 </div>
 <div id="page-exercises" class="container page hidden">
 <div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>Exercise Library</h1></div>
-<div id="exerciseGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:12px">📍</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Exercise library is available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
+<div id="exerciseGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:16px">📍</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Exercise library is available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
 <div id="exerciseContent" class="hidden">
 <input type="text" id="exerciseSearch" placeholder="Search exercises..." oninput="searchMemberExercises()" style="width:100%;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box;">
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="exerciseFilters"></div>
@@ -98,7 +98,7 @@ h2{font-size:18px;font-weight:600;margin-bottom:12px}
 </div>
 <div id="page-charts" class="container page hidden">
 <div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>My Charts</h1></div>
-<div id="chartGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:12px">📋</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Charts are available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
+<div id="chartGpsLock" class="gym-locked hidden"><div style="font-size:48px;margin-bottom:16px">📋</div><h2>At Gym Only</h2><p class="text-muted" style="margin-top:8px">Charts are available only when you are at the gym.</p><button class="btn btn-primary" style="margin-top:16px;max-width:200px" onclick="checkGps()">Check Location</button></div>
 <div id="chartContent" class="hidden"><div id="chartList"></div></div>
 </div>
 <div id="page-attendance" class="container page hidden">
@@ -113,15 +113,66 @@ h2{font-size:18px;font-weight:600;margin-bottom:12px}
 <div class="tab-bar">
 <div class="tab active" onclick="showPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Home</div>
 <div class="tab" onclick="showPage('exercises')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M3 12h4m10 0h4M12 3v4m0 12v4"/></svg>Exercises</div>
-<div class="tab" onclick="showPage('charts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Charts</div>
+<div class="tab" onclick="showPage('charts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5v12"/></svg>Charts</div>
 <div class="tab" onclick="showPage('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>Profile</div>
 </div>
 </div>
 <script>
 const API = '';
 let user = null, token = null, atGym = false;
+
+/* --- output encoding -----------------------------------------------------------
+   Every value below is written with innerHTML, and several come from the database
+   (member names, exercise descriptions, chart payloads). Each one is passed through
+   esc()/jsq()/safeUrl() at the point of use — this is the XSS fix, so do not add a
+   raw interpolation into a template string without going through one of them.      */
+const ENT = { '&': '&', '<': '<', '>': '>', '"': '"', "'": "'" };
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ENT[c]); }
+/** Escapes a value destined for a single-quoted JS string inside a double-quoted
+ *  HTML attribute: JS-escape first, then HTML-escape, so the browser decodes back
+ *  to a properly quoted literal rather than letting a quote break out. */
+function jsq(v) {
+  return esc(String(v == null ? '' : v)
+    .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r').replace(/\n/g, '\\n'));
+}
+/** Only root-relative or http(s) URLs survive — blocks javascript: hrefs/srcs. */
+function safeUrl(v) {
+  const s = String(v || '').trim();
+  if (!s) return '';
+  if (s.charAt(0) === '/') return s;
+  try {
+    const u = new URL(s);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? s : '';
+  } catch (e) { return ''; }
+}
+function fmtDate(v) {
+  if (!v) return 'N/A';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+}
+function fmtTime(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleTimeString();
+}
+function safeParse(json, fallback) {
+  try { const v = JSON.parse(json); return (v === null || v === undefined) ? fallback : v; }
+  catch (e) { return fallback; }
+}
+/** Diet plans exist in two shapes: seeded templates store an array of meals, the admin
+ *  creator stores an object keyed by meal. Normalise both into a flat meal list. */
+function normaliseMeals(meals) {
+  if (Array.isArray(meals)) return meals;
+  if (meals && typeof meals === 'object') {
+    return Object.values(meals).reduce((acc, v) => acc.concat(Array.isArray(v) ? v : []), []);
+  }
+  return [];
+}
+
 function show(el) { document.getElementById(el).classList.remove('hidden'); }
 function hide(el) { document.getElementById(el).classList.add('hidden'); }
+
 function showPage(name) {
   document.querySelectorAll('[id^="page-"]').forEach(p => { if (p.id !== 'page-app') p.classList.add('hidden'); });
   document.querySelectorAll('#page-app .page').forEach(p => p.classList.add('hidden'));
@@ -134,114 +185,187 @@ function showPage(name) {
   if (name === 'attendance') loadAttendance();
   if (name === 'profile') loadProfile();
 }
+
+/** Rejects non-OK responses instead of silently handing an {error} object to callers
+ *  (which used to render as an empty list), and ends the session on 401 rather than
+ *  retrying an expired token forever. */
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch(API + path, { ...opts, headers });
-  return res.json();
+  const res = await fetch(API + path, Object.assign({}, opts, { headers: headers }));
+  if (res.status === 401) { endSession(); throw new Error('Session expired'); }
+  const data = await res.json().catch(function () { return {}; });
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
 }
+
+function endSession() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  user = null; token = null;
+  hide('page-app'); show('page-login');
+  const errEl = document.getElementById('loginError');
+  if (errEl) {
+    errEl.textContent = 'Session expired. Please sign in again.';
+    errEl.classList.remove('hidden');
+  }
+}
+
 async function doLogin() {
   const phone = document.getElementById('loginPhone').value.trim();
   const name = document.getElementById('loginName').value.trim();
   const errEl = document.getElementById('loginError');
   if (!phone || !name) { errEl.textContent = 'Please fill all fields'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
   try {
-    const data = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ phone, name }) });
-    if (data.error) { errEl.textContent = data.error; errEl.classList.remove('hidden'); return; }
+    const res = await fetch(API + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phone, name: name }),
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok || data.error) {
+      errEl.textContent = data.error || 'Login failed';
+      errEl.classList.remove('hidden');
+      return;
+    }
     token = data.token; user = data.user;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     startApp();
-  } catch(e) { errEl.textContent = 'Connection failed'; errEl.classList.remove('hidden'); }
+  } catch (e) {
+    errEl.textContent = 'Connection failed';
+    errEl.classList.remove('hidden');
+  }
 }
+
 function doLogout() {
-  localStorage.removeItem('token'); localStorage.removeItem('user');
-  user = null; token = null;
-  hide('page-app'); show('page-login');
+  endSession();
+  document.getElementById('loginError').classList.add('hidden');
 }
+
 async function startApp() {
   hide('page-login'); show('page-app');
-  document.getElementById('welcomeName').textContent = 'Welcome, ' + user.name + '!';
-  document.getElementById('memberCode').textContent = 'Code: ' + user.uniqueCode;
+  document.getElementById('welcomeName').textContent = 'Welcome, ' + (user.name || '') + '!';
+  document.getElementById('memberCode').textContent = 'Code: ' + (user.uniqueCode || '');
   loadDashboard();
 }
+
 async function loadDashboard() {
-  const data = await api('/api/attendance/history/' + user.id);
-  const today = new Date().toISOString().split('T')[0];
-  const todayRecord = (data.records || []).find(r => r.checkIn.startsWith(today) && !r.checkOut);
-  if (todayRecord) {
-    hide('btnCheckin'); document.getElementById('btnCheckout').classList.remove('hidden');
-    document.getElementById('checkinIcon').textContent = '✅';
-    document.getElementById('checkinTitle').textContent = 'You are checked in';
-    document.getElementById('checkinSubtitle').textContent = 'Check-in: ' + new Date(todayRecord.checkIn).toLocaleTimeString();
-  } else {
-    show('btnCheckin'); document.getElementById('btnCheckout').classList.add('hidden');
-    document.getElementById('checkinIcon').textContent = '📍';
-    document.getElementById('checkinTitle').textContent = 'Ready to work out?';
-    document.getElementById('checkinSubtitle').textContent = 'Tap below to check in';
+  try {
+    const data = await api('/api/attendance/history/' + user.id);
+    const today = new Date().toISOString().split('T')[0];
+    const records = data.records || [];
+    // Guarded: a missing checkIn must not throw and blank the whole dashboard.
+    const todayRecord = records.find(r => r.checkIn && String(r.checkIn).indexOf(today) === 0 && !r.checkOut);
+    if (todayRecord) {
+      hide('btnCheckin'); document.getElementById('btnCheckout').classList.remove('hidden');
+      document.getElementById('checkinIcon').textContent = '✅';
+      document.getElementById('checkinTitle').textContent = 'You are checked in';
+      document.getElementById('checkinSubtitle').textContent = 'Check-in: ' + fmtTime(todayRecord.checkIn);
+    } else {
+      show('btnCheckin'); document.getElementById('btnCheckout').classList.add('hidden');
+      document.getElementById('checkinIcon').textContent = '📍';
+      document.getElementById('checkinTitle').textContent = 'Ready to work out?';
+      document.getElementById('checkinSubtitle').textContent = 'Tap below to check in';
+    }
+
+    const notifData = await api('/api/notifications?memberId=' + user.id);
+    const notifList = document.getElementById('notifList');
+    const notifs = notifData.notifications || [];
+    if (notifs.length === 0) {
+      notifList.innerHTML = '<p class="text-muted">No notifications</p>';
+      return;
+    }
+    notifList.innerHTML = notifs.slice(0, 5).map(n =>
+      '<div class="notif-item ' + (n.isRead ? 'notif-read' : 'notif-unread') + '">'
+      + esc(n.message)
+      + '<br><span style="font-size:12px;color:#9ca3af">'
+      + esc(fmtDate(n.createdAt) + ' ' + fmtTime(n.createdAt)) + '</span></div>'
+    ).join('');
+
+    // Rendered now — clear the unread flag so notifications don't stay highlighted forever.
+    if (notifs.some(n => !n.isRead)) {
+      api('/api/notifications/read', { method: 'PUT', body: JSON.stringify({ memberId: user.id }) })
+        .catch(function () { /* best effort */ });
+    }
+  } catch (e) {
+    if (e && e.message === 'Session expired') return;
+    console.error('dashboard load failed', e);
   }
-  const notifData = await api('/api/notifications?memberId=' + user.id);
-  const notifList = document.getElementById('notifList');
-  const notifs = notifData.notifications || [];
-  if (notifs.length === 0) { notifList.innerHTML = '<p class="text-muted">No notifications</p>'; return; }
-  notifList.innerHTML = notifs.slice(0, 5).map(n =>
-    '<div class="notif-item ' + (n.isRead ? 'notif-read' : 'notif-unread') + '">' + n.message + '<br><span style="font-size:12px;color:#9ca3af">' + new Date(n.createdAt).toLocaleString() + '</span></div>'
-  ).join('');
 }
+
+function getCoords() {
+  return new Promise(function (resolve, reject) {
+    if (!navigator.geolocation) { reject(new Error('Location access required')); return; }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) { resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }); },
+      function () { reject(new Error('Location access required for check-in')); },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    );
+  });
+}
+
 async function doCheckin() {
-  if (!navigator.geolocation) { alert('Location access required for check-in'); return; }
-  document.getElementById('btnCheckin').textContent = 'Checking location...';
-  document.getElementById('btnCheckin').disabled = true;
-  navigator.geolocation.getCurrentPosition(
-    async pos => {
-      const d = await api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude);
-      if (!d.atGym) {
-        alert('You must be at the gym to check in (' + d.distance + 'm away, max 100m)');
-        document.getElementById('btnCheckin').textContent = 'Check In';
-        document.getElementById('btnCheckin').disabled = false;
-        return;
-      }
-      const data = await api('/api/attendance/checkin', { method: 'POST', body: JSON.stringify({ memberId: user.id }) });
-      if (data.error) { alert(data.error); }
-      document.getElementById('btnCheckin').textContent = 'Check In';
-      document.getElementById('btnCheckin').disabled = false;
-      loadDashboard();
-    },
-    () => { alert('Location access required for check-in'); document.getElementById('btnCheckin').textContent = 'Check In'; document.getElementById('btnCheckin').disabled = false; },
-    { enableHighAccuracy: true }
-  );
+  const btn = document.getElementById('btnCheckin');
+  btn.textContent = 'Checking location...';
+  btn.disabled = true;
+  try {
+    const coords = await getCoords();
+    const d = await api('/api/gps-check?lat=' + coords.latitude + '&lon=' + coords.longitude);
+    if (!d.atGym) {
+      alert('You must be at the gym to check in (' + d.distance + 'm away, max ' + d.radius + 'm)');
+      return;
+    }
+    // Coordinates travel with the check-in so the server re-verifies the geofence
+    // instead of trusting this client-side pre-check.
+    await api('/api/attendance/checkin', {
+      method: 'POST',
+      body: JSON.stringify({ memberId: user.id, latitude: coords.latitude, longitude: coords.longitude }),
+    });
+    loadDashboard();
+  } catch (e) {
+    if (e && e.message && e.message !== 'Session expired') alert(e.message);
+  } finally {
+    btn.textContent = 'Check In';
+    btn.disabled = false;
+  }
 }
+
 async function doCheckout() {
-  if (!navigator.geolocation) { alert('Location access required for check-out'); return; }
-  document.getElementById('btnCheckout').textContent = 'Checking location...';
-  document.getElementById('btnCheckout').disabled = true;
-  navigator.geolocation.getCurrentPosition(
-    async pos => {
-      const d = await api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude);
-      if (!d.atGym) {
-        alert('You must be at the gym to check out (' + d.distance + 'm away, max 100m)');
-        document.getElementById('btnCheckout').textContent = 'Check Out';
-        document.getElementById('btnCheckout').disabled = false;
-        return;
-      }
-      const data = await api('/api/attendance/checkout', { method: 'POST', body: JSON.stringify({ memberId: user.id }) });
-      if (data.error) { alert(data.error); }
-      document.getElementById('btnCheckout').textContent = 'Check Out';
-      document.getElementById('btnCheckout').disabled = false;
-      loadDashboard();
-    },
-    () => { alert('Location access required for check-out'); document.getElementById('btnCheckout').textContent = 'Check Out'; document.getElementById('btnCheckout').disabled = false; },
-    { enableHighAccuracy: true }
-  );
+  const btn = document.getElementById('btnCheckout');
+  btn.textContent = 'Checking location...';
+  btn.disabled = true;
+  try {
+    const coords = await getCoords();
+    const d = await api('/api/gps-check?lat=' + coords.latitude + '&lon=' + coords.longitude);
+    if (!d.atGym) {
+      alert('You must be at the gym to check out (' + d.distance + 'm away, max ' + d.radius + 'm)');
+      return;
+    }
+    await api('/api/attendance/checkout', { method: 'POST', body: JSON.stringify({ memberId: user.id }) });
+    loadDashboard();
+  } catch (e) {
+    if (e && e.message && e.message !== 'Session expired') alert(e.message);
+  } finally {
+    btn.textContent = 'Check Out';
+    btn.disabled = false;
+  }
 }
+
 function checkGps() {
   if (!navigator.geolocation) { atGym = false; updateGpsUI(); return; }
   navigator.geolocation.getCurrentPosition(
-    pos => { api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude).then(d => { atGym = d.atGym; updateGpsUI(); }); },
-    () => { atGym = false; updateGpsUI(); },
-    { enableHighAccuracy: true }
+    function (pos) {
+      api('/api/gps-check?lat=' + pos.coords.latitude + '&lon=' + pos.coords.longitude)
+        .then(function (d) { atGym = !!d.atGym; updateGpsUI(); })
+        .catch(function () { atGym = false; updateGpsUI(); });
+    },
+    function () { atGym = false; updateGpsUI(); },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
   );
 }
+
 function updateGpsUI() {
   if (atGym) {
     hide('exerciseGpsLock'); show('exerciseContent');
@@ -252,89 +376,209 @@ function updateGpsUI() {
     show('chartGpsLock'); hide('chartContent');
   }
 }
+
 let allExercises = [], exerciseFilter = 'all';
+
 async function loadExercises() {
   if (allExercises.length > 0) { renderExercises(); return; }
-  const data = await api('/api/exercises');
-  allExercises = data.exercises || [];
-  const cats = [...new Set(allExercises.map(e => e.category))];
+  try {
+    const data = await api('/api/exercises');
+    allExercises = data.exercises || [];
+  } catch (e) {
+    allExercises = [];
+    return;
+  }
+  const cats = allExercises.map(e => e.category).filter(Boolean)
+    .filter((c, i, arr) => arr.indexOf(c) === i);
   document.getElementById('exerciseFilters').innerHTML =
-    '<span onclick="filterExercises(\'all\')" class="badge badge-blue" style="cursor:pointer;padding:6px 12px">All</span>' +
-    cats.map(c => '<span onclick="filterExercises(\'' + c + '\')" class="badge" style="cursor:pointer;padding:6px 12px;background:#f3f4f6">' + c.charAt(0).toUpperCase() + c.slice(1) + '</span>').join('');
+    '<span onclick="filterExercises(\'all\')" class="badge badge-blue" style="cursor:pointer;padding:6px 12px">All</span>'
+    + cats.map(c =>
+      '<span onclick="filterExercises(\'' + jsq(c) + '\')" class="badge" '
+      + 'style="cursor:pointer;padding:6px 12px;background:#f3f4f6">'
+      + esc(c.charAt(0).toUpperCase() + c.slice(1)) + '</span>').join('');
   renderExercises();
 }
+
 function filterExercises(cat) { exerciseFilter = cat; renderExercises(); }
 function searchMemberExercises() { renderExercises(); }
+
 function renderExercises() {
   const search = (document.getElementById('exerciseSearch')?.value || '').toLowerCase();
   let list = exerciseFilter === 'all' ? allExercises : allExercises.filter(e => e.category === exerciseFilter);
-  if (search) list = list.filter(e => (e.name || '').toLowerCase().includes(search) || (e.muscleGroup || '').toLowerCase().includes(search) || (e.category || '').toLowerCase().includes(search));
-  document.getElementById('exerciseList').innerHTML = list.map(e => {
+  if (search) {
+    list = list.filter(e =>
+      (e.name || '').toLowerCase().indexOf(search) >= 0
+      || (e.muscleGroup || '').toLowerCase().indexOf(search) >= 0
+      || (e.category || '').toLowerCase().indexOf(search) >= 0);
+  }
+  document.getElementById('exerciseList').innerHTML = list.map(function (e) {
     let gifHtml = '';
-    if (e.gifUrl) {
-      gifHtml = '<img src="' + e.gifUrl + '" alt="' + e.name + '" class="exercise-gif" loading="lazy" onclick="openGifLightbox(\'' + e.gifUrl + '\')" style="cursor:pointer">';
+    const gif = safeUrl(e.gifUrl);
+    if (gif) {
+      gifHtml = '<img src="' + esc(gif) + '" alt="' + esc(e.name) + '" class="exercise-gif" loading="lazy"'
+        + ' onclick="openGifLightbox(\'' + jsq(gif) + '\')" style="cursor:pointer">';
     }
     let videoHtml = '';
-    if (e.videoUrl) {
-      const ytMatch = e.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
-      const vid = ytMatch ? ytMatch[1] : null;
-      if (vid) {
-        videoHtml = '<div style="margin-top:8px;border-radius:8px;overflow:hidden;position:relative;padding-bottom:56.25%;height:0"><iframe src="https://www.youtube.com/embed/' + vid + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allowfullscreen loading="lazy"></iframe></div>';
+    const video = safeUrl(e.videoUrl);
+    if (video) {
+      const ytMatch = video.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{6,})/);
+      if (ytMatch) {
+        videoHtml = '<div style="margin-top:8px;border-radius:8px;overflow:hidden;position:relative;'
+          + 'padding-bottom:56.25%;height:0"><iframe src="https://www.youtube.com/embed/' + esc(ytMatch[1])
+          + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" '
+          + 'allowfullscreen loading="lazy" title="Exercise video"></iframe></div>';
       } else {
-        videoHtml = '<div style="margin-top:8px"><a href="' + e.videoUrl + '" target="_blank" style="color:#2563eb;font-size:13px">▶ Watch Video</a></div>';
+        videoHtml = '<div style="margin-top:8px"><a href="' + esc(video)
+          + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-size:13px">▶ Watch Video</a></div>';
       }
     }
-    return '<div class="exercise-card">' + gifHtml + '<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:start"><h3 style="font-size:15px">' + e.name + '</h3><span class="badge ' + (e.difficulty === 'beginner' ? 'badge-green' : e.difficulty === 'intermediate' ? 'badge-yellow' : 'badge-red') + '">' + e.difficulty + '</span></div>' + (e.muscleGroup ? '<div style="font-size:13px;color:#6b7280;margin-top:4px">Target: ' + e.muscleGroup + '</div>' : '') + (e.description ? '<div style="font-size:13px;color:#4b5563;margin-top:4px">' + e.description + '</div>' : '') + videoHtml + '</div></div>';
-  }).join('');
+    const difficulty = ['beginner', 'intermediate', 'advanced'].indexOf(e.difficulty) >= 0
+      ? e.difficulty : 'beginner';
+    const diffClass = difficulty === 'beginner' ? 'badge-green'
+      : difficulty === 'intermediate' ? 'badge-yellow' : 'badge-red';
+    return '<div class="exercise-card">' + gifHtml + '<div style="flex:1">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start">'
+      + '<h3 style="font-size:15px">' + esc(e.name) + '</h3>'
+      + '<span class="badge ' + diffClass + '">' + esc(difficulty) + '</span></div>'
+      + (e.muscleGroup ? '<div style="font-size:13px;color:#6b7280;margin-top:4px">Target: ' + esc(e.muscleGroup) + '</div>' : '')
+      + (e.description ? '<div style="font-size:13px;color:#4b5563;margin-top:4px">' + esc(e.description) + '</div>' : '')
+      + videoHtml + '</div></div>';
+  }).join('') || '<p class="text-muted" style="text-align:center;padding:24px">No exercises match your search.</p>';
 }
+
 async function loadCharts() {
-  const data = await api('/api/charts/member/' + user.id);
-  const charts = data.charts || [];
-  if (charts.length === 0) { document.getElementById('chartList').innerHTML = '<p class="text-muted" style="text-align:center;padding:32px">No charts assigned yet</p>'; return; }
-  document.getElementById('chartList').innerHTML = charts.map(c => {
-    const content = JSON.parse(c.content);
-    let inner = '';
-    if (c.type === 'DIET' && content.meals) {
-      inner = '<div style="font-size:13px;color:#6b7280;margin-bottom:8px">Target: ' + content.targetCalories + ' kcal/day</div>' +
-        content.meals.map(m => '<div class="meal-item"><div><strong>' + m.time + '</strong> ' + m.name + '<br><span style="font-size:12px;color:#9ca3af">' + (m.items || []).join(', ') + '</span></div><span style="white-space:nowrap;color:#6b7280">' + m.calories + ' kcal</span></div>').join('');
-    } else if (c.type === 'WORKOUT' && content.exercises) {
-      inner = '<div style="font-size:13px;color:#6b7280;margin-bottom:8px">Difficulty: ' + content.difficulty + '</div>' +
-        content.exercises.map((e, i) => '<div class="exercise-item"><div><span style="color:#9ca3af;margin-right:8px">' + (i + 1) + '</span><strong>' + e.name + '</strong></div><span style="font-size:13px;color:#6b7280">' + (e.sets ? e.sets + '×' + e.reps : e.duration || '') + '</span></div>').join('');
+  try {
+    const data = await api('/api/charts/member/' + user.id);
+    const charts = data.charts || [];
+    const container = document.getElementById('chartList');
+    if (charts.length === 0) {
+      container.innerHTML = '<p class="text-muted" style="text-align:center;padding:32px">No charts assigned yet</p>';
+      return;
     }
-    return '<div class="chart-section"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><h3>' + content.name + '</h3><span class="badge ' + (c.type === 'DIET' ? 'badge-green' : 'badge-blue') + '">' + c.type + '</span></div>' + inner + '</div>';
-  }).join('');
-}
-async function loadAttendance() {
-  const data = await api('/api/attendance/history/' + user.id);
-  const records = data.records || [];
-  if (records.length === 0) { document.getElementById('attendanceList').innerHTML = '<p class="text-muted">No attendance records</p>'; return; }
-  document.getElementById('attendanceList').innerHTML = '<h2>Recent Attendance</h2>' +
-    records.slice(0, 20).map(r => {
-      const dur = r.checkOut ? Math.round((new Date(r.checkOut) - new Date(r.checkIn)) / 60000) : '-';
-      return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6"><div><div style="font-weight:500">' + new Date(r.checkIn).toLocaleDateString() + '</div><div style="font-size:13px;color:#6b7280">' + new Date(r.checkIn).toLocaleTimeString() + ' - ' + (r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : 'Open') + '</div></div><div style="text-align:right"><span class="badge ' + (r.checkOut ? 'badge-green' : 'badge-yellow') + '">' + (r.checkOut ? 'Done' : 'Open') + '</span>' + (dur !== '-' ? '<div style="font-size:12px;color:#6b7280;margin-top:4px">' + dur + ' min</div>' : '') + '</div></div>';
+    container.innerHTML = charts.map(function (c) {
+      const content = safeParse(c.content, {}) || {};
+      // API stores type lowercase; compare case-insensitively so a legacy uppercase row
+      // still renders instead of showing an empty box.
+      const type = String(c.type || '').toLowerCase();
+      let inner = '';
+      if (type === 'diet') {
+        const meals = normaliseMeals(content.meals);
+        if (meals.length) {
+          inner = (content.targetCalories
+              ? '<div style="font-size:13px;color:#6b7280;margin-bottom:8px">Target: '
+                + esc(content.targetCalories) + ' kcal/day</div>' : '')
+            + meals.map(m =>
+              '<div class="meal-item"><div><strong>' + esc(m.time || '') + '</strong> ' + esc(m.name || '')
+              + ((m.items && m.items.length)
+                  ? '<br><span style="font-size:12px;color:#9ca3af">' + esc(m.items.join(', ')) + '</span>' : '')
+              + '</div><span style="white-space:nowrap;color:#6b7280">'
+              + esc(m.calories || 0) + ' kcal</span></div>').join('');
+        }
+      } else if (type === 'workout') {
+        const exs = Array.isArray(content.exercises) ? content.exercises : [];
+        if (exs.length) {
+          inner = (content.difficulty
+              ? '<div style="font-size:13px;color:#6b7280;margin-bottom:8px">Difficulty: ' + esc(content.difficulty) + '</div>' : '')
+            + exs.map((e, i) =>
+              '<div class="exercise-item"><div><span style="color:#9ca3af;margin-right:8px">' + (i + 1)
+              + '</span><strong>' + esc(e.name || '') + '</strong></div>'
+              + '<span style="font-size:13px;color:#6b7280">'
+              + esc(e.sets ? (e.sets + '\u00d7' + e.reps) : (e.duration || '')) + '</span></div>').join('');
+        }
+      }
+      if (!inner) inner = '<p class="text-muted" style="font-size:13px">This chart has no details yet.</p>';
+      return '<div class="chart-section"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><h3>'
+        + esc(content.name || 'Chart') + '</h3><span class="badge '
+        + (type === 'diet' ? 'badge-green' : 'badge-blue') + '">' + esc(type.toUpperCase())
+        + '</span></div>' + inner + '</div>';
     }).join('');
+  } catch (e) {
+    if (e && e.message === 'Session expired') return;
+    const container = document.getElementById('chartList');
+    if (container) {
+      container.innerHTML = '<p class="text-muted" style="text-align:center;padding:32px">Could not load charts.</p>';
+    }
+  }
 }
+
+async function loadAttendance() {
+  try {
+    const data = await api('/api/attendance/history/' + user.id);
+    const records = data.records || [];
+    const container = document.getElementById('attendanceList');
+    if (records.length === 0) {
+      container.innerHTML = '<p class="text-muted">No attendance records</p>';
+      return;
+    }
+    container.innerHTML = '<h2>Recent Attendance</h2>' + records.slice(0, 20).map(function (r) {
+      const open = !r.checkOut;
+      const dur = (!open && r.checkIn && r.checkOut)
+        ? Math.max(0, Math.round((new Date(r.checkOut) - new Date(r.checkIn)) / 60000)) : null;
+      return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6"><div>'
+        + '<div style="font-weight:500">' + esc(fmtDate(r.checkIn)) + '</div>'
+        + '<div style="font-size:13px;color:#6b7280">' + esc(fmtTime(r.checkIn)) + ' - '
+        + esc(open ? 'Open' : fmtTime(r.checkOut)) + '</div></div>'
+        + '<div style="text-align:right"><span class="badge ' + (open ? 'badge-yellow' : 'badge-green') + '">'
+        + (open ? 'Open' : 'Done') + '</span>'
+        + (dur !== null ? '<div style="font-size:12px;color:#6b7280;margin-top:4px">' + dur + ' min</div>' : '')
+        + '</div></div>';
+    }).join('');
+  } catch (e) {
+    if (e && e.message === 'Session expired') return;
+  }
+}
+
 async function loadProfile() {
-  const data = await api('/api/members/' + user.id);
-  const m = data.member;
-  const active = m.endDate && new Date(m.endDate) >= new Date();
-  document.getElementById('profileInfo').innerHTML = '<h2>Personal Information</h2>' +
-    [['Name', m.name], ['Code', m.uniqueCode], ['Phone', m.phone], ['DOB', m.dob ? new Date(m.dob).toLocaleDateString() : 'N/A'], ['Address', m.address || 'N/A'], ['Height', m.height ? m.height + ' cm' : 'N/A'], ['Weight', m.weight ? m.weight + ' kg' : 'N/A'], ['Medical', m.medicalIssues || 'None'], ['', ''], ['Membership', ''], ['Package', m.packageName || 'N/A'], ['Status', active ? 'Active' : 'Expired'], ['Start', m.startDate ? new Date(m.startDate).toLocaleDateString() : 'N/A'], ['End', m.endDate ? new Date(m.endDate).toLocaleDateString() : 'N/A'], ['Total Paid', '₹' + (m.totalAmount || 0).toLocaleString()]]
-    .filter(r => r[0] || r[1] === '').map(r => r[0] === '' ? '<div style="border-bottom:1px solid #f3f4f6;margin:8px 0"></div>' :
-    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6"><span style="color:#6b7280">' + r[0] + '</span><span style="font-weight:500">' + r[1] + '</span></div>').join('');
+  try {
+    const data = await api('/api/members/' + user.id);
+    const m = data.member || {};
+    const active = m.endDate && String(m.endDate).slice(0, 10) >= new Date().toISOString().split('T')[0];
+    const rows = [
+      ['Name', m.name], ['Code', m.uniqueCode], ['Phone', m.phone],
+      ['DOB', m.dob ? fmtDate(m.dob) : 'N/A'],
+      ['Address', m.address || 'N/A'],
+      ['Height', m.height ? (m.height + ' cm') : 'N/A'],
+      ['Weight', m.weight ? (m.weight + ' kg') : 'N/A'],
+      ['Medical', m.medicalIssues || 'None'],
+      ['', ''], ['Membership', ''],
+      ['Package', m.packageName || 'N/A'],
+      ['Status', active ? 'Active' : 'Expired'],
+      ['Start', m.startDate ? fmtDate(m.startDate) : 'N/A'],
+      ['End', m.endDate ? fmtDate(m.endDate) : 'N/A'],
+      ['Total Paid', '\u20b9' + Number(m.totalAmount || 0).toLocaleString()],
+    ];
+    document.getElementById('profileInfo').innerHTML = '<h2>Personal Information</h2>'
+      + rows.filter(r => r[0] || r[1] === '')
+        .map(r => (r[0] === ''
+          ? '<div style="border-bottom:1px solid #f3f4f6;margin:8px 0"></div>'
+          : '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6">'
+            + '<span style="color:#6b7280">' + esc(r[0]) + '</span>'
+            + '<span style="font-weight:500;text-align:right">' + esc(r[1]) + '</span></div>'))
+        .join('');
+  } catch (e) {
+    if (e && e.message === 'Session expired') return;
+    const el = document.getElementById('profileInfo');
+    if (el) el.innerHTML = '<p class="text-muted">Could not load your profile.</p>';
+  }
 }
+
 function openGifLightbox(url) {
-  document.getElementById('gifLightboxImg').src = url;
+  const src = safeUrl(url);
+  if (!src) return;
+  document.getElementById('gifLightboxImg').src = src;
   document.getElementById('gifLightbox').style.display = 'flex';
 }
-window.addEventListener('load', () => {
-  setTimeout(() => document.getElementById('splash').classList.add('hidden'), 500);
-  token = localStorage.getItem('token'); user = JSON.parse(localStorage.getItem('user') || 'null');
-  if (token && user) startApp(); else show('page-login');
+
+window.addEventListener('load', function () {
+  setTimeout(function () { document.getElementById('splash').classList.add('hidden'); }, 500);
+  token = localStorage.getItem('token');
+  user = safeParse(localStorage.getItem('user'), null);
+  if (token && user && user.id) startApp();
+  else show('page-login');
 });
 </script>
 <div id="gifLightbox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;justify-content:center;align-items:center;cursor:pointer" onclick="this.style.display='none'">
-  <img id="gifLightboxImg" src="" style="max-width:90%;max-height:90%;border-radius:12px">
+  <img id="gifLightboxImg" src="" alt="Exercise preview" style="max-width:90%;max-height:90%;border-radius:12px">
   <span style="position:absolute;top:20px;right:30px;font-size:36px;color:#fff;cursor:pointer" onclick="document.getElementById('gifLightbox').style.display='none'">&times;</span>
 </div>
 </body>

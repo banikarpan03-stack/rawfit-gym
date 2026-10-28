@@ -1,18 +1,31 @@
 {
   "name": "rawfit-gym",
-  "version": "1.0.0",
-  "description": "RAWfit Gym Management System",
+  "version": "2.0.0",
+  "description": "RAWfit Gym Management System — member admissions, attendance with GPS geofencing, exercise library, diet/workout charts.",
+  "private": true,
+  "main": "src/server.js",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node src/server.js"
+    "dev": "node src/server.js",
+    "test": "node --test",
+    "lint": "eslint src test"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
     "bcryptjs": "^3.0.3",
-    "jsonwebtoken": "^9.0.3",
     "cors": "^2.8.5",
     "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.13.0",
     "uuid": "^14.0.1"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.13.0"
   }
 }

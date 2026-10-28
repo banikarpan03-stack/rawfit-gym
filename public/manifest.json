@@ -1,0 +1,19 @@
+{
+  "name": "RAWfit Gym Management",
+  "short_name": "RAWfit",
+  "description": "Member check-in, exercise library, diet and workout charts for RAWfit Gym.",
+  "start_url": "/member/",
+  "scope": "/member/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2563eb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

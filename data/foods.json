@@ -1,0 +1,1166 @@
+[
+ {
+  "name": "Basmati Rice (cooked)",
+  "serving": "1 cup (150g)",
+  "calories": 210,
+  "category": "rice"
+ },
+ {
+  "name": "Brown Rice (cooked)",
+  "serving": "1 cup (150g)",
+  "calories": 170,
+  "category": "rice"
+ },
+ {
+  "name": "Jeera Rice",
+  "serving": "1 cup (150g)",
+  "calories": 220,
+  "category": "rice"
+ },
+ {
+  "name": "Lemon Rice",
+  "serving": "1 cup (150g)",
+  "calories": 230,
+  "category": "rice"
+ },
+ {
+  "name": "Coconut Rice",
+  "serving": "1 cup (150g)",
+  "calories": 260,
+  "category": "rice"
+ },
+ {
+  "name": "Panta Bhat (Fermented Rice)",
+  "serving": "1 cup",
+  "calories": 160,
+  "category": "bengali"
+ },
+ {
+  "name": "Khichdi (Rice & Dal)",
+  "serving": "1 cup (200g)",
+  "calories": 190,
+  "category": "rice"
+ },
+ {
+  "name": "Pulao",
+  "serving": "1 cup (180g)",
+  "calories": 250,
+  "category": "rice"
+ },
+ {
+  "name": "Biryani (Chicken)",
+  "serving": "1 plate (250g)",
+  "calories": 380,
+  "category": "rice"
+ },
+ {
+  "name": "Biryani (Veg)",
+  "serving": "1 plate (250g)",
+  "calories": 290,
+  "category": "rice"
+ },
+ {
+  "name": "Chapati/Roti (whole wheat)",
+  "serving": "1 piece",
+  "calories": 70,
+  "category": "bread"
+ },
+ {
+  "name": "Chapati with Ghee",
+  "serving": "1 piece",
+  "calories": 95,
+  "category": "bread"
+ },
+ {
+  "name": "Paratha (Plain)",
+  "serving": "1 piece",
+  "calories": 180,
+  "category": "bread"
+ },
+ {
+  "name": "Aloo Paratha",
+  "serving": "1 piece",
+  "calories": 250,
+  "category": "bread"
+ },
+ {
+  "name": "Gobi Paratha",
+  "serving": "1 piece",
+  "calories": 220,
+  "category": "bread"
+ },
+ {
+  "name": "Luchi (Maida Puri)",
+  "serving": "1 piece",
+  "calories": 120,
+  "category": "bread"
+ },
+ {
+  "name": "Naan (Plain)",
+  "serving": "1 piece",
+  "calories": 210,
+  "category": "bread"
+ },
+ {
+  "name": "Butter Naan",
+  "serving": "1 piece",
+  "calories": 260,
+  "category": "bread"
+ },
+ {
+  "name": "Garlic Naan",
+  "serving": "1 piece",
+  "calories": 230,
+  "category": "bread"
+ },
+ {
+  "name": "Puri",
+  "serving": "1 piece",
+  "calories": 100,
+  "category": "bread"
+ },
+ {
+  "name": "Bhakri (Jowar)",
+  "serving": "1 piece",
+  "calories": 80,
+  "category": "bread"
+ },
+ {
+  "name": "Pesarattu (Moong Dosa)",
+  "serving": "1 piece",
+  "calories": 130,
+  "category": "bread"
+ },
+ {
+  "name": "Idli",
+  "serving": "2 pieces",
+  "calories": 120,
+  "category": "bread"
+ },
+ {
+  "name": "Dosa (Plain)",
+  "serving": "1 piece",
+  "calories": 130,
+  "category": "bread"
+ },
+ {
+  "name": "Masala Dosa",
+  "serving": "1 piece",
+  "calories": 210,
+  "category": "bread"
+ },
+ {
+  "name": "Uttapam",
+  "serving": "1 piece",
+  "calories": 180,
+  "category": "bread"
+ },
+ {
+  "name": "Moong Dal (Yellow)",
+  "serving": "1 cup (200g)",
+  "calories": 160,
+  "category": "dal"
+ },
+ {
+  "name": "Masoor Dal (Red)",
+  "serving": "1 cup (200g)",
+  "calories": 170,
+  "category": "dal"
+ },
+ {
+  "name": "Toor Dal (Arhar)",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "dal"
+ },
+ {
+  "name": "Chana Dal",
+  "serving": "1 cup (200g)",
+  "calories": 190,
+  "category": "dal"
+ },
+ {
+  "name": "Urad Dal (Black)",
+  "serving": "1 cup (200g)",
+  "calories": 175,
+  "category": "dal"
+ },
+ {
+  "name": "Rajma (Kidney Beans)",
+  "serving": "1 cup (200g)",
+  "calories": 210,
+  "category": "dal"
+ },
+ {
+  "name": "Chole (Chickpeas)",
+  "serving": "1 cup (200g)",
+  "calories": 220,
+  "category": "dal"
+ },
+ {
+  "name": "Black Eyed Peas (Lobia)",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "dal"
+ },
+ {
+  "name": "Dal Makhani",
+  "serving": "1 cup (200g)",
+  "calories": 280,
+  "category": "dal"
+ },
+ {
+  "name": "Sambar",
+  "serving": "1 cup (200g)",
+  "calories": 140,
+  "category": "dal"
+ },
+ {
+  "name": "Aloo Dum",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "vegetable"
+ },
+ {
+  "name": "Begun Bhaja (Fried Eggplant)",
+  "serving": "1 cup (150g)",
+  "calories": 200,
+  "category": "bengali"
+ },
+ {
+  "name": "Aloo Bhujia",
+  "serving": "1 cup (150g)",
+  "calories": 160,
+  "category": "vegetable"
+ },
+ {
+  "name": "Bhindi Masala",
+  "serving": "1 cup (150g)",
+  "calories": 130,
+  "category": "vegetable"
+ },
+ {
+  "name": "Palak Paneer",
+  "serving": "1 cup (200g)",
+  "calories": 220,
+  "category": "vegetable"
+ },
+ {
+  "name": "Paneer Butter Masala",
+  "serving": "1 cup (200g)",
+  "calories": 310,
+  "category": "vegetable"
+ },
+ {
+  "name": "Aloo Gobi",
+  "serving": "1 cup (200g)",
+  "calories": 150,
+  "category": "vegetable"
+ },
+ {
+  "name": "Mixed Vegetable Curry",
+  "serving": "1 cup (200g)",
+  "calories": 140,
+  "category": "vegetable"
+ },
+ {
+  "name": "Cabbage Sabzi",
+  "serving": "1 cup (150g)",
+  "calories": 90,
+  "category": "vegetable"
+ },
+ {
+  "name": "Data (Drumstick Curry)",
+  "serving": "1 cup (200g)",
+  "calories": 110,
+  "category": "bengali"
+ },
+ {
+  "name": "Shukto",
+  "serving": "1 cup (200g)",
+  "calories": 120,
+  "category": "bengali"
+ },
+ {
+  "name": "Borabai (Ridge Gourd)",
+  "serving": "1 cup (150g)",
+  "calories": 70,
+  "category": "bengali"
+ },
+ {
+  "name": "Karela (Bitter Gourd)",
+  "serving": "1 cup (150g)",
+  "calories": 80,
+  "category": "vegetable"
+ },
+ {
+  "name": "Baingan Bharta",
+  "serving": "1 cup (200g)",
+  "calories": 130,
+  "category": "vegetable"
+ },
+ {
+  "name": "Mushroom Masala",
+  "serving": "1 cup (200g)",
+  "calories": 160,
+  "category": "vegetable"
+ },
+ {
+  "name": "Jeera Aloo",
+  "serving": "1 cup (200g)",
+  "calories": 170,
+  "category": "vegetable"
+ },
+ {
+  "name": "Rohu Fish (Curry)",
+  "serving": "1 piece (150g)",
+  "calories": 220,
+  "category": "fish"
+ },
+ {
+  "name": "Hilsa/Ilish (Fried)",
+  "serving": "1 piece (100g)",
+  "calories": 260,
+  "category": "bengali"
+ },
+ {
+  "name": "Hilsa Curry (Shorshe)",
+  "serving": "1 piece (150g)",
+  "calories": 300,
+  "category": "bengali"
+ },
+ {
+  "name": "Pomfret (Fried)",
+  "serving": "1 piece (100g)",
+  "calories": 240,
+  "category": "fish"
+ },
+ {
+  "name": "Katla Fish Curry",
+  "serving": "1 piece (150g)",
+  "calories": 210,
+  "category": "fish"
+ },
+ {
+  "name": "Pabda Fish (Curry)",
+  "serving": "1 piece (100g)",
+  "calories": 180,
+  "category": "bengali"
+ },
+ {
+  "name": "Surmai (Kingfish)",
+  "serving": "1 piece (150g)",
+  "calories": 230,
+  "category": "fish"
+ },
+ {
+  "name": "Bangda (Mackerel)",
+  "serving": "1 piece (100g)",
+  "calories": 200,
+  "category": "fish"
+ },
+ {
+  "name": "Tilapia (Fried)",
+  "serving": "1 piece (100g)",
+  "calories": 210,
+  "category": "fish"
+ },
+ {
+  "name": "Fish Fry (Bengali)",
+  "serving": "1 piece (100g)",
+  "calories": 270,
+  "category": "bengali"
+ },
+ {
+  "name": "Macher Jhol",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "bengali"
+ },
+ {
+  "name": "Chingri Malai Curry",
+  "serving": "1 cup (200g)",
+  "calories": 280,
+  "category": "bengali"
+ },
+ {
+  "name": "Chicken Curry (Homestyle)",
+  "serving": "1 cup (200g)",
+  "calories": 250,
+  "category": "chicken"
+ },
+ {
+  "name": "Chicken Tikka",
+  "serving": "4 pieces (120g)",
+  "calories": 200,
+  "category": "chicken"
+ },
+ {
+  "name": "Butter Chicken",
+  "serving": "1 cup (200g)",
+  "calories": 350,
+  "category": "chicken"
+ },
+ {
+  "name": "Chicken Biryani",
+  "serving": "1 plate (250g)",
+  "calories": 400,
+  "category": "chicken"
+ },
+ {
+  "name": "Chicken Korma",
+  "serving": "1 cup (200g)",
+  "calories": 320,
+  "category": "chicken"
+ },
+ {
+  "name": "Chicken Tandoori",
+  "serving": "1 piece (150g)",
+  "calories": 230,
+  "category": "chicken"
+ },
+ {
+  "name": "Chicken vindaloo",
+  "serving": "1 cup (200g)",
+  "calories": 280,
+  "category": "chicken"
+ },
+ {
+  "name": "Chicken 65",
+  "serving": "1 plate (150g)",
+  "calories": 300,
+  "category": "chicken"
+ },
+ {
+  "name": "Kadai Chicken",
+  "serving": "1 cup (200g)",
+  "calories": 290,
+  "category": "chicken"
+ },
+ {
+  "name": "Mutton Curry",
+  "serving": "1 cup (200g)",
+  "calories": 320,
+  "category": "mutton"
+ },
+ {
+  "name": "Mutton Korma",
+  "serving": "1 cup (200g)",
+  "calories": 380,
+  "category": "mutton"
+ },
+ {
+  "name": "Mutton Biryani",
+  "serving": "1 plate (250g)",
+  "calories": 450,
+  "category": "mutton"
+ },
+ {
+  "name": "Mutton Rogan Josh",
+  "serving": "1 cup (200g)",
+  "calories": 340,
+  "category": "mutton"
+ },
+ {
+  "name": "Mutton Keema",
+  "serving": "1 cup (200g)",
+  "calories": 300,
+  "category": "mutton"
+ },
+ {
+  "name": "Goat Brain Masala",
+  "serving": "1 cup (150g)",
+  "calories": 260,
+  "category": "mutton"
+ },
+ {
+  "name": "Egg (Boiled)",
+  "serving": "1 large",
+  "calories": 78,
+  "category": "egg"
+ },
+ {
+  "name": "Egg (Fried)",
+  "serving": "1 large",
+  "calories": 91,
+  "category": "egg"
+ },
+ {
+  "name": "Omelette",
+  "serving": "2 eggs",
+  "calories": 160,
+  "category": "egg"
+ },
+ {
+  "name": "Egg Bhurji",
+  "serving": "1 cup (150g)",
+  "calories": 190,
+  "category": "egg"
+ },
+ {
+  "name": "Egg Curry",
+  "serving": "2 eggs + gravy",
+  "calories": 250,
+  "category": "egg"
+ },
+ {
+  "name": "Anda Masala",
+  "serving": "1 cup (200g)",
+  "calories": 220,
+  "category": "egg"
+ },
+ {
+  "name": "Dahi (Plain Yogurt)",
+  "serving": "1 cup (150g)",
+  "calories": 90,
+  "category": "dairy"
+ },
+ {
+  "name": "Paneer (Cottage Cheese)",
+  "serving": "100g",
+  "calories": 265,
+  "category": "dairy"
+ },
+ {
+  "name": "Paneer Tikka",
+  "serving": "4 pieces (120g)",
+  "calories": 280,
+  "category": "dairy"
+ },
+ {
+  "name": "Lassi (Sweet)",
+  "serving": "1 glass (250ml)",
+  "calories": 180,
+  "category": "dairy"
+ },
+ {
+  "name": "Lassi (Salted)",
+  "serving": "1 glass (250ml)",
+  "calories": 120,
+  "category": "dairy"
+ },
+ {
+  "name": "Chaas (Buttermilk)",
+  "serving": "1 glass (250ml)",
+  "calories": 60,
+  "category": "dairy"
+ },
+ {
+  "name": "Raita",
+  "serving": "1 cup (150g)",
+  "calories": 80,
+  "category": "dairy"
+ },
+ {
+  "name": "Ghee (Clarified Butter)",
+  "serving": "1 tbsp (15g)",
+  "calories": 120,
+  "category": "dairy"
+ },
+ {
+  "name": "Milk (Full Fat)",
+  "serving": "1 glass (200ml)",
+  "calories": 130,
+  "category": "dairy"
+ },
+ {
+  "name": "Rabri",
+  "serving": "1 cup (150g)",
+  "calories": 300,
+  "category": "dairy"
+ },
+ {
+  "name": "Kheer",
+  "serving": "1 cup (200g)",
+  "calories": 250,
+  "category": "dairy"
+ },
+ {
+  "name": "Samosa (Veg)",
+  "serving": "1 piece",
+  "calories": 210,
+  "category": "snack"
+ },
+ {
+  "name": "Samosa (Chicken)",
+  "serving": "1 piece",
+  "calories": 240,
+  "category": "snack"
+ },
+ {
+  "name": "Pakora (Veg)",
+  "serving": "4 pieces",
+  "calories": 180,
+  "category": "snack"
+ },
+ {
+  "name": "Aloo Tikki",
+  "serving": "2 pieces",
+  "calories": 170,
+  "category": "snack"
+ },
+ {
+  "name": "Pani Puri (6 pcs)",
+  "serving": "6 pieces",
+  "calories": 150,
+  "category": "snack"
+ },
+ {
+  "name": "Bhel Puri",
+  "serving": "1 plate",
+  "calories": 180,
+  "category": "snack"
+ },
+ {
+  "name": "Sev Puri",
+  "serving": "1 plate",
+  "calories": 200,
+  "category": "snack"
+ },
+ {
+  "name": "Dhokla",
+  "serving": "2 pieces",
+  "calories": 120,
+  "category": "snack"
+ },
+ {
+  "name": "Vada Pav",
+  "serving": "1 piece",
+  "calories": 250,
+  "category": "snack"
+ },
+ {
+  "name": "Pav Bhaji",
+  "serving": "1 plate",
+  "calories": 350,
+  "category": "snack"
+ },
+ {
+  "name": "Chaat",
+  "serving": "1 plate",
+  "calories": 200,
+  "category": "snack"
+ },
+ {
+  "name": "Kachori",
+  "serving": "1 piece",
+  "calories": 180,
+  "category": "snack"
+ },
+ {
+  "name": "Litti Chokha",
+  "serving": "2 pieces",
+  "calories": 350,
+  "category": "bengali"
+ },
+ {
+  "name": "Pitha (Bengali Rice Cake)",
+  "serving": "2 pieces",
+  "calories": 200,
+  "category": "bengali"
+ },
+ {
+  "name": "Sandesh",
+  "serving": "2 pieces (60g)",
+  "calories": 160,
+  "category": "bengali"
+ },
+ {
+  "name": "Rasgulla",
+  "serving": "2 pieces (80g)",
+  "calories": 150,
+  "category": "bengali"
+ },
+ {
+  "name": "Mishti Doi",
+  "serving": "1 cup (150g)",
+  "calories": 180,
+  "category": "bengali"
+ },
+ {
+  "name": "Jalebi",
+  "serving": "4 pieces",
+  "calories": 200,
+  "category": "snack"
+ },
+ {
+  "name": "Gulab Jamun",
+  "serving": "2 pieces",
+  "calories": 175,
+  "category": "snack"
+ },
+ {
+  "name": "Peda",
+  "serving": "2 pieces (40g)",
+  "calories": 130,
+  "category": "snack"
+ },
+ {
+  "name": "Laddoo (Besan)",
+  "serving": "1 piece (40g)",
+  "calories": 160,
+  "category": "snack"
+ },
+ {
+  "name": "Barfi",
+  "serving": "2 pieces (40g)",
+  "calories": 150,
+  "category": "snack"
+ },
+ {
+  "name": "Chai (with sugar & milk)",
+  "serving": "1 cup (150ml)",
+  "calories": 60,
+  "category": "beverage"
+ },
+ {
+  "name": "Black Tea",
+  "serving": "1 cup (150ml)",
+  "calories": 5,
+  "category": "beverage"
+ },
+ {
+  "name": "Green Tea",
+  "serving": "1 cup (150ml)",
+  "calories": 5,
+  "category": "beverage"
+ },
+ {
+  "name": "Nimbu Pani (Lemon Water)",
+  "serving": "1 glass",
+  "calories": 40,
+  "category": "beverage"
+ },
+ {
+  "name": "Coconut Water",
+  "serving": "1 glass (200ml)",
+  "calories": 45,
+  "category": "beverage"
+ },
+ {
+  "name": "Alu Bhaja (French Fries Bengali)",
+  "serving": "1 cup (100g)",
+  "calories": 250,
+  "category": "bengali"
+ },
+ {
+  "name": "Mochar Ghonto (Banana Flower)",
+  "serving": "1 cup (150g)",
+  "calories": 120,
+  "category": "bengali"
+ },
+ {
+  "name": "Posto (Poppy Seed Curry)",
+  "serving": "1 cup (150g)",
+  "calories": 160,
+  "category": "bengali"
+ },
+ {
+  "name": "Chingri Bhape (Steamed Prawns)",
+  "serving": "1 cup (150g)",
+  "calories": 180,
+  "category": "bengali"
+ },
+ {
+  "name": "Mutton Kosha",
+  "serving": "1 cup (200g)",
+  "calories": 350,
+  "category": "bengali"
+ },
+ {
+  "name": "Kochu Shak (Taro Greens)",
+  "serving": "1 cup (150g)",
+  "calories": 90,
+  "category": "bengali"
+ },
+ {
+  "name": "Sorse Ilish (Hilsa in Mustard)",
+  "serving": "1 piece (150g)",
+  "calories": 280,
+  "category": "bengali"
+ },
+ {
+  "name": "Doi Mach (Fish in Yogurt)",
+  "serving": "1 piece (150g)",
+  "calories": 240,
+  "category": "bengali"
+ },
+ {
+  "name": "Aloo Posto",
+  "serving": "1 cup (200g)",
+  "calories": 190,
+  "category": "bengali"
+ },
+ {
+  "name": "Begun Posto",
+  "serving": "1 cup (200g)",
+  "calories": 170,
+  "category": "bengali"
+ },
+ {
+  "name": "Potol Posto",
+  "serving": "1 cup (200g)",
+  "calories": 150,
+  "category": "bengali"
+ },
+ {
+  "name": "Ghugni (Yellow Peas)",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "bengali"
+ },
+ {
+  "name": "Cholar Dal",
+  "serving": "1 cup (200g)",
+  "calories": 200,
+  "category": "bengali"
+ },
+ {
+  "name": "Dalna (Mixed Veg in Gravy)",
+  "serving": "1 cup (200g)",
+  "calories": 140,
+  "category": "bengali"
+ },
+ {
+  "name": "Labra (Mixed Vegetable)",
+  "serving": "1 cup (200g)",
+  "calories": 130,
+  "category": "bengali"
+ },
+ {
+  "name": "Enchor (Green Jackfruit)",
+  "serving": "1 cup (200g)",
+  "calories": 150,
+  "category": "bengali"
+ },
+ {
+  "name": "Soya Chaap Curry",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "vegetable"
+ },
+ {
+  "name": "Tofu Bhurji",
+  "serving": "1 cup (150g)",
+  "calories": 150,
+  "category": "vegetable"
+ },
+ {
+  "name": "Sprouts Salad",
+  "serving": "1 cup (150g)",
+  "calories": 80,
+  "category": "vegetable"
+ },
+ {
+  "name": "Fruit Chaat",
+  "serving": "1 cup (200g)",
+  "calories": 100,
+  "category": "snack"
+ },
+ {
+  "name": "Banana",
+  "serving": "1 medium",
+  "calories": 105,
+  "category": "fruit"
+ },
+ {
+  "name": "Mango",
+  "serving": "1 medium",
+  "calories": 150,
+  "category": "fruit"
+ },
+ {
+  "name": "Apple",
+  "serving": "1 medium",
+  "calories": 95,
+  "category": "fruit"
+ },
+ {
+  "name": "Orange",
+  "serving": "1 medium",
+  "calories": 65,
+  "category": "fruit"
+ },
+ {
+  "name": "Papaya",
+  "serving": "1 cup (150g)",
+  "calories": 60,
+  "category": "fruit"
+ },
+ {
+  "name": "Guava",
+  "serving": "1 medium",
+  "calories": 68,
+  "category": "fruit"
+ },
+ {
+  "name": "Watermelon",
+  "serving": "1 cup (150g)",
+  "calories": 45,
+  "category": "fruit"
+ },
+ {
+  "name": "Pomegranate",
+  "serving": "1 cup (150g)",
+  "calories": 120,
+  "category": "fruit"
+ },
+ {
+  "name": "Pineapple",
+  "serving": "1 cup (150g)",
+  "calories": 80,
+  "category": "fruit"
+ },
+ {
+  "name": "Grapes",
+  "serving": "1 cup (150g)",
+  "calories": 105,
+  "category": "fruit"
+ },
+ {
+  "name": "Curd Rice",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "rice"
+ },
+ {
+  "name": "Tehri (Yellow Rice)",
+  "serving": "1 cup (200g)",
+  "calories": 230,
+  "category": "rice"
+ },
+ {
+  "name": "Fish Cutlet",
+  "serving": "2 pieces",
+  "calories": 250,
+  "category": "bengali"
+ },
+ {
+  "name": "Chicken Cutlet",
+  "serving": "2 pieces",
+  "calories": 280,
+  "category": "chicken"
+ },
+ {
+  "name": "Egg Roll",
+  "serving": "1 piece",
+  "calories": 280,
+  "category": "snack"
+ },
+ {
+  "name": "Chicken Roll",
+  "serving": "1 piece",
+  "calories": 350,
+  "category": "chicken"
+ },
+ {
+  "name": "Momos (Steamed Veg)",
+  "serving": "6 pieces",
+  "calories": 200,
+  "category": "snack"
+ },
+ {
+  "name": "Momos (Chicken)",
+  "serving": "6 pieces",
+  "calories": 250,
+  "category": "chicken"
+ },
+ {
+  "name": "Thukpa",
+  "serving": "1 bowl (300ml)",
+  "calories": 220,
+  "category": "snack"
+ },
+ {
+  "name": "Chowmein (Veg)",
+  "serving": "1 plate (250g)",
+  "calories": 300,
+  "category": "snack"
+ },
+ {
+  "name": "Chowmein (Chicken)",
+  "serving": "1 plate (250g)",
+  "calories": 380,
+  "category": "chicken"
+ },
+ {
+  "name": "Tandoori Roti",
+  "serving": "1 piece",
+  "calories": 80,
+  "category": "bread"
+ },
+ {
+  "name": "Missi Roti",
+  "serving": "1 piece",
+  "calories": 120,
+  "category": "bread"
+ },
+ {
+  "name": "Rumali Roti",
+  "serving": "1 piece",
+  "calories": 90,
+  "category": "bread"
+ },
+ {
+  "name": "Paneer Paratha",
+  "serving": "1 piece",
+  "calories": 280,
+  "category": "bread"
+ },
+ {
+  "name": "Methi Thepla",
+  "serving": "2 pieces",
+  "calories": 180,
+  "category": "bread"
+ },
+ {
+  "name": "Makki di Roti",
+  "serving": "1 piece",
+  "calories": 100,
+  "category": "bread"
+ },
+ {
+  "name": "Sarson da Saag",
+  "serving": "1 cup (200g)",
+  "calories": 180,
+  "category": "vegetable"
+ },
+ {
+  "name": "Malai Kofta",
+  "serving": "1 cup (200g)",
+  "calories": 350,
+  "category": "vegetable"
+ },
+ {
+  "name": "Navratan Korma",
+  "serving": "1 cup (200g)",
+  "calories": 280,
+  "category": "vegetable"
+ },
+ {
+  "name": "Chana Masala",
+  "serving": "1 cup (200g)",
+  "calories": 200,
+  "category": "dal"
+ },
+ {
+  "name": "Bhatura",
+  "serving": "1 piece",
+  "calories": 200,
+  "category": "bread"
+ },
+ {
+  "name": "Chole Bhature",
+  "serving": "1 plate",
+  "calories": 420,
+  "category": "bread"
+ },
+ {
+  "name": "Puri (Small)",
+  "serving": "2 pieces",
+  "calories": 150,
+  "category": "bread"
+ },
+ {
+  "name": "Poha",
+  "serving": "1 cup (150g)",
+  "calories": 140,
+  "category": "rice"
+ },
+ {
+  "name": "Upma",
+  "serving": "1 cup (150g)",
+  "calories": 150,
+  "category": "rice"
+ },
+ {
+  "name": "Sabudana Khichdi",
+  "serving": "1 cup (150g)",
+  "calories": 180,
+  "category": "rice"
+ },
+ {
+  "name": "Rava Dosa",
+  "serving": "1 piece",
+  "calories": 120,
+  "category": "bread"
+ },
+ {
+  "name": "Medu Vada",
+  "serving": "2 pieces",
+  "calories": 140,
+  "category": "snack"
+ },
+ {
+  "name": "Pesarattu",
+  "serving": "1 piece",
+  "calories": 130,
+  "category": "bread"
+ },
+ {
+  "name": "Appam",
+  "serving": "2 pieces",
+  "calories": 140,
+  "category": "bread"
+ },
+ {
+  "name": "Puttu",
+  "serving": "1 cup (150g)",
+  "calories": 160,
+  "category": "rice"
+ },
+ {
+  "name": "Avial",
+  "serving": "1 cup (200g)",
+  "calories": 150,
+  "category": "vegetable"
+ },
+ {
+  "name": "Olan",
+  "serving": "1 cup (200g)",
+  "calories": 120,
+  "category": "vegetable"
+ },
+ {
+  "name": "Erissery",
+  "serving": "1 cup (200g)",
+  "calories": 170,
+  "category": "vegetable"
+ },
+ {
+  "name": "Rasam",
+  "serving": "1 cup (200ml)",
+  "calories": 50,
+  "category": "dal"
+ },
+ {
+  "name": "Papadum",
+  "serving": "1 piece",
+  "calories": 30,
+  "category": "snack"
+ },
+ {
+  "name": "Achaar (Pickle)",
+  "serving": "1 tbsp",
+  "calories": 15,
+  "category": "snack"
+ },
+ {
+  "name": "Coconut Chutney",
+  "serving": "2 tbsp",
+  "calories": 50,
+  "category": "snack"
+ },
+ {
+  "name": "Mint Chutney",
+  "serving": "2 tbsp",
+  "calories": 20,
+  "category": "snack"
+ },
+ {
+  "name": "Tamarind Chutney",
+  "serving": "2 tbsp",
+  "calories": 60,
+  "category": "snack"
+ }
+]

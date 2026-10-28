@@ -990,6 +990,10 @@ tr:hover td { background: rgba(0,0,0,0.02); }
               <label>End Date (auto-calculated)</label>
               <input type="date" id="admEndDate" readonly>
             </div>
+            <div class="form-group">
+              <label>Extra Days</label>
+              <input type="number" id="admExtraDays" value="0" min="0" max="365" placeholder="0" oninput="calcAdmissionPrice()">
+            </div>
           </div>
           <div class="stats-grid" style="margin-top:16px;">
             <div class="stat-card">
@@ -1120,8 +1124,11 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     <div id="page-foodDatabase" class="page-content hidden">
       <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
         <h1 class="page-title" style="margin:0;">Indian/Bengali Food Database</h1>
-        <div class="search-box">
-          <input type="text" id="foodDbSearch" placeholder="Search foods..." oninput="filterFoodDatabase()">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <div class="search-box">
+            <input type="text" id="foodDbSearch" placeholder="Search foods..." oninput="filterFoodDatabase()">
+          </div>
+          <button class="btn btn-primary" onclick="openFoodModal()">+ Add Food</button>
         </div>
       </div>
       <div class="grid-3" id="foodDatabaseList"></div>
@@ -1161,6 +1168,127 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closePackageModal()">Cancel</button>
       <button class="btn btn-primary" onclick="savePackage()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member Modal -->
+<div id="memberModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Member</h3>
+      <button class="modal-close" onclick="closeMemberModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="memId">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="memName" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="memPhone" placeholder="10-digit number" maxlength="15">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="memEmail" placeholder="optional">
+        </div>
+        <div class="form-group">
+          <label>Gender</label>
+          <select id="memGender">
+            <option value="">—</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="date" id="memDob">
+        </div>
+        <div class="form-group">
+          <label>Package</label>
+          <select id="memPackage" onchange="previewMemberEnd()"></select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" id="memStart" onchange="previewMemberEnd()">
+        </div>
+        <div class="form-group">
+          <label>End Date (recalculated) <span id="memExtra" style="font-weight:400;opacity:.75;"></span></label>
+          <input type="date" id="memEnd" readonly>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Height (cm)</label>
+          <input type="number" id="memHeight" step="0.1" placeholder="optional">
+        </div>
+        <div class="form-group">
+          <label>Weight (kg)</label>
+          <input type="number" id="memWeight" step="0.1" placeholder="optional">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="memAddress" placeholder="optional">
+      </div>
+      <div class="form-group">
+        <label>Medical Issues</label>
+        <textarea id="memMedical" rows="2" placeholder="Injuries, conditions, allergies..."></textarea>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);">These fields were previously unreachable — the API accepted them but no screen could set them.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeMemberModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMember()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Food Modal -->
+<div id="foodModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Food</h3>
+      <button class="modal-close" onclick="closeFoodModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Food Name</label>
+        <input type="text" id="foodName" placeholder="e.g. Machher Jhol">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Serving</label>
+          <input type="text" id="foodServing" placeholder="e.g. 1 cup (150g)">
+        </div>
+        <div class="form-group">
+          <label>Calories</label>
+          <input type="number" id="foodCalories" min="0" max="20000" placeholder="e.g. 210">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="foodCategory" list="foodCategoryList" placeholder="rice, dal, fish, bengali...">
+        <datalist id="foodCategoryList">
+          <option value="rice"><option value="bread"><option value="dal"><option value="vegetable">
+          <option value="fish"><option value="chicken"><option value="mutton"><option value="egg">
+          <option value="dairy"><option value="snack"><option value="bengali"><option value="beverage">
+          <option value="fruit">
+        </datalist>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeFoodModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFood()">Save</button>
     </div>
   </div>
 </div>
@@ -1333,6 +1461,29 @@ tr:hover td { background: rgba(0,0,0,0.02); }
 </div>
 
 <script>
+/* --- output encoding: every DB value written into innerHTML must pass through one of
+   these. esc() for text, jsq() for a single-quoted JS string inside an HTML attribute,
+   safeUrl() for any URL used in src/href/onclick. Do not add a raw interpolation. --- */
+const ENT = { '&': '&', '<': '<', '>': '>', '"': '"', "'": "'" };
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ENT[c]); }
+function jsq(v) {
+  return esc(String(v == null ? '' : v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r/g, '\\r').replace(/\n/g, '\\n'));
+}
+function safeUrl(v) {
+  const s = String(v || '').trim();
+  if (!s) return '';
+  if (s.charAt(0) === '/') return s;
+  try { const u = new URL(s); return (u.protocol === 'http:' || u.protocol === 'https:') ? s : ''; }
+  catch (e) { return ''; }
+}
+function fmtDate(v) { if (!v) return '-'; const d = new Date(v); return isNaN(d.getTime()) ? '-' : d.toLocaleDateString(); }
+function fmtTime(v) { if (!v) return '-'; const d = new Date(v); return isNaN(d.getTime()) ? '-' : d.toLocaleTimeString(); }
+function safeParse(j, fb) { try { const v = JSON.parse(j); return (v == null) ? fb : v; } catch (e) { return fb; } }
+function normaliseMeals(meals) {
+  if (Array.isArray(meals)) return meals;
+  if (meals && typeof meals === 'object') return Object.values(meals).reduce((a, v) => a.concat(Array.isArray(v) ? v : []), []);
+  return [];
+}
 const INDIAN_FOOD_DB = [
   {name:"Basmati Rice (cooked)",serving:"1 cup (150g)",calories:210,category:"rice"},
   {name:"Brown Rice (cooked)",serving:"1 cup (150g)",calories:170,category:"rice"},
@@ -1537,6 +1688,7 @@ let state = {
   packages: [],
   attendance: [],
   exercises: [],
+  foods: [],
   dietTemplates: [],
   workoutTemplates: [],
   currentPage: 'dashboard',
@@ -1565,6 +1717,10 @@ async function apiCall(method, path, body) {
       method, headers,
       body: body ? JSON.stringify(body) : undefined
     });
+    if (res.status === 401) {
+      logoutOnExpiry();
+      throw new Error('Session expired');
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || data.message || 'Request failed');
     return data;
@@ -1610,6 +1766,22 @@ function handleLogout() {
   document.getElementById('loginPassword').value = '';
 }
 
+function logoutOnExpiry() {
+  const hadSession = !!state.token;
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('rawfit_token');
+  localStorage.removeItem('rawfit_user');
+  if (!hadSession) return;
+  document.getElementById('appContainer').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginPhone').value = '';
+  document.getElementById('loginPassword').value = '';
+  const err = document.getElementById('loginError');
+  err.textContent = 'Session expired';
+  err.style.display = 'block';
+}
+
 // NAVIGATION
 function navigateTo(page) {
   document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
@@ -1627,7 +1799,7 @@ function navigateTo(page) {
   else if (page === 'dietTemplates') loadDietTemplates();
   else if (page === 'workoutTemplates') loadWorkoutTemplates();
   else if (page === 'charts') loadChartData();
-  else if (page === 'foodDatabase') renderFoodDatabase();
+  else if (page === 'foodDatabase') loadFoods();
   else if (page === 'admission') loadAdmissionForm();
 }
 
@@ -1649,24 +1821,155 @@ async function loadDashboard() {
     const data = await apiCall('GET', '/api/dashboard');
     const s = data.stats || {};
     document.getElementById('statsGrid').innerHTML = `
-      <div class="stat-card"><h3>Total Members</h3><div class="value">${s.totalMembers || 0}</div></div>
-      <div class="stat-card"><h3>Active Members</h3><div class="value">${s.activeMembers || 0}</div></div>
-      <div class="stat-card"><h3>Today's Attendance</h3><div class="value">${s.todayAttendance || 0}</div></div>
-      <div class="stat-card"><h3>Revenue This Month</h3><div class="value">₹${(s.monthlyRevenue || 0).toLocaleString()}</div></div>
+      <div class="stat-card"><h3>Total Members</h3><div class="value">${esc(s.totalMembers || 0)}</div></div>
+      <div class="stat-card"><h3>Active Members</h3><div class="value">${esc(s.activeMembers || 0)}</div></div>
+      <div class="stat-card"><h3>Today's Attendance</h3><div class="value">${esc(s.todayAttendance || 0)}</div></div>
+      <div class="stat-card"><h3>Revenue This Month</h3><div class="value">₹${esc((s.monthlyRevenue || 0).toLocaleString())}</div></div>
+      <div class="stat-card"><h3>Total Revenue (All Time)</h3><div class="value">₹${esc((s.totalRevenue || 0).toLocaleString())}</div></div>
     `;
     const rm = data.recentMembers || [];
     document.getElementById('recentMembersTable').innerHTML = rm.length ? rm.map(m =>
-      `<tr><td>${m.name}</td><td>${m.phone}</td><td>${m.packageName || '-'}</td><td>${m.startDate ? new Date(m.startDate).toLocaleDateString() : '-'}</td></tr>`
+      `<tr><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.packageName || '-')}</td><td>${esc(fmtDate(m.startDate))}</td></tr>`
     ).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No recent members</td></tr>';
 
     const ta = data.todayAttendees || [];
     document.getElementById('todayAttendanceTable').innerHTML = ta.length ? ta.map(a =>
-      `<tr><td>${a.memberName || '-'}</td><td>${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</td><td>${a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : '-'}</td><td>${!a.checkOut ? `<button class="btn btn-sm btn-warning" onclick="forceCheckout('${a.memberId}')">Force Checkout</button>` : '-'}</td></tr>`
+      `<tr><td>${esc(a.memberName || '-')}</td><td>${esc(fmtTime(a.checkIn))}</td><td>${esc(fmtTime(a.checkOut))}</td><td>${!a.checkOut ? `<button class="btn btn-sm btn-warning" onclick="forceCheckout('${jsq(a.memberId)}')">Force Checkout</button>` : '-'}</td></tr>`
     ).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No attendance today</td></tr>';
   } catch (e) {}
 }
 
 // MEMBERS
+/* ---- Member edit / delete / notify -------------------------------------------
+   These three actions had no UI at all: PUT /api/members/:id and
+   DELETE /api/members/:id existed but nothing ever called them, and address,
+   height, weight, medicalIssues, email and gender were accepted by the API yet
+   unreachable from any screen.                                                 */
+
+function toDateInput(iso) {
+  if (!iso) return '';
+  const s = String(iso);
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : '';
+}
+
+function closeMemberModal() {
+  document.getElementById('memberModal').classList.remove('show');
+}
+
+async function openMemberModal(id) {
+  try {
+    const [detail, pkgData] = await Promise.all([
+      apiCall('GET', '/api/members/' + id),
+      state.packages.length
+        ? Promise.resolve({ packages: state.packages })
+        : apiCall('GET', '/api/packages'),
+    ]);
+    const m = detail.member;
+    if (!m) { showToast('Member not found', 'error'); return; }
+
+    const packages = pkgData.packages || [];
+    // Markup sink: the <option> text is literal and every package field is passed
+    // through esc()/jsq() below, so no stored value can break out of the element.
+    const sel = document.getElementById('memPackage');
+    sel.innerHTML = packages.map(p => {
+      const selectedAttr = (p.id === m.packageId) ? ' selected' : '';
+      return `<option value="${jsq(p.id)}" data-duration="${esc(p.duration)}" data-price="${esc(p.price)}"`
+        + selectedAttr + `>${esc(p.name)} — ₹${esc(p.price)} (${esc(p.duration)} days)</option>`;
+    }).join('');
+    // Keep a deactivated package selectable so the row still renders the truth.
+    if (m.packageId && !packages.some(p => p.id === m.packageId)) {
+      sel.insertAdjacentHTML('beforeend',
+        `<option value="${jsq(m.packageId)}" selected>${esc(m.packageName || m.packageId)} (inactive)</option>`);
+    }
+
+    document.getElementById('memId').value = m.id;
+    document.getElementById('memName').value = m.name || '';
+    document.getElementById('memPhone').value = m.phone || '';
+    document.getElementById('memEmail').value = m.email || '';
+    document.getElementById('memGender').value = m.gender || '';
+    document.getElementById('memDob').value = toDateInput(m.dob);
+    document.getElementById('memStart').value = toDateInput(m.startDate);
+    document.getElementById('memEnd').value = toDateInput(m.endDate);
+    document.getElementById('memHeight').value = (m.height === null || m.height === undefined) ? '' : m.height;
+    document.getElementById('memWeight').value = (m.weight === null || m.weight === undefined) ? '' : m.weight;
+    document.getElementById('memAddress').value = m.address || '';
+    document.getElementById('memMedical').value = m.medicalIssues || '';
+
+    state.memberExtraDays = Number(m.extraDays || 0);
+    previewMemberEnd();
+    document.getElementById('memberModal').classList.add('show');
+  } catch (e) { /* apiCall already toasted the error */ }
+}
+
+/** Live preview of the new end date when the package or start date changes. */
+function previewMemberEnd() {
+  const opt = document.getElementById('memPackage').selectedOptions[0];
+  const days = Number(opt && opt.dataset.duration);
+  const extra = Number(state.memberExtraDays || 0);
+  const start = document.getElementById('memStart').value;
+  const out = document.getElementById('memEnd');
+  if (!days || !start) { out.value = ''; return; }
+  const end = new Date(start + 'T00:00:00.000Z');
+  if (isNaN(end.getTime())) { out.value = ''; return; }
+  // Same derivation as the server: package duration + any extra days bought.
+  end.setUTCDate(end.getUTCDate() + days + extra);
+  out.value = end.toISOString().slice(0, 10);
+  document.getElementById('memExtra').textContent = extra
+    ? '(includes +' + extra + ' extra days)' : '';
+}
+
+async function saveMember() {
+  const id = document.getElementById('memId').value;
+  if (!id) { showToast('No member loaded', 'error'); return; }
+
+  const name = document.getElementById('memName').value.trim();
+  const phone = document.getElementById('memPhone').value.trim();
+  const packageId = document.getElementById('memPackage').value;
+  if (!name || !phone || !packageId) { showToast('Name, phone and package are required', 'error'); return; }
+
+  const body = {
+    name, phone, packageId,
+    email: document.getElementById('memEmail').value.trim(),
+    gender: document.getElementById('memGender').value,
+    dob: document.getElementById('memDob').value || null,
+    startDate: document.getElementById('memStart').value || null,
+    height: document.getElementById('memHeight').value,
+    weight: document.getElementById('memWeight').value,
+    address: document.getElementById('memAddress').value.trim(),
+    medicalIssues: document.getElementById('memMedical').value.trim(),
+  };
+
+  try {
+    await apiCall('PUT', '/api/members/' + id, body);
+    showToast('Member updated');
+    closeMemberModal();
+    loadMembers();
+  } catch (e) { /* toasted by apiCall */ }
+}
+
+async function deleteMember(id) {
+  const member = (state.members || []).find(x => x.id === id);
+  const label = member ? member.name : 'this member';
+  // Native dialog (not markup), so plain concatenation -- nothing to escape.
+  const ok = confirm('Delete ' + label + '?\n\nThis permanently removes their attendance, '
+    + 'payments, charts and notifications too. It cannot be undone.');
+  if (!ok) return;
+  try {
+    await apiCall('DELETE', '/api/members/' + id);
+    showToast('Member deleted');
+    loadMembers();
+  } catch (e) { /* toasted by apiCall */ }
+}
+
+async function notifyMember(id) {
+  const message = prompt('Message to send to this member:');
+  if (!message || !message.trim()) return;
+  try {
+    await apiCall('POST', '/api/notifications', { memberId: id, message: message.trim() });
+    showToast('Notification sent');
+  } catch (e) { /* toasted by apiCall */ }
+}
+
 async function loadMembers() {
   try {
     const data = await apiCall('GET', '/api/members');
@@ -1677,20 +1980,25 @@ async function loadMembers() {
 
 function renderMembers(members) {
   document.getElementById('membersTable').innerHTML = members.length ? members.map(m => {
-    const active = m.status === 'active' || (!m.endDate || new Date(m.endDate) >= new Date());
+    const active = !m.endDate || new Date(m.endDate) >= new Date();
     return `<tr>
-      <td>${m.name}</td><td>${m.phone}</td><td>${m.packageName || '-'}</td>
-      <td>${m.startDate ? new Date(m.startDate).toLocaleDateString() : '-'}</td>
-      <td>${m.endDate ? new Date(m.endDate).toLocaleDateString() : '-'}</td>
+      <td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.packageName || '-')}</td>
+      <td>${esc(fmtDate(m.startDate))}</td>
+      <td>${esc(fmtDate(m.endDate))}</td>
       <td><span class="badge ${active ? 'badge-success' : 'badge-danger'}">${active ? 'Active' : 'Inactive'}</span></td>
-      <td><button class="btn btn-sm btn-info" onclick="viewMember('${m._id || m.id}')">View</button></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-info" onclick="viewMember('${jsq(m.id)}')">View</button>
+        <button class="btn btn-sm btn-warning" onclick="openMemberModal('${jsq(m.id)}')">Edit</button>
+        <button class="btn btn-sm btn-secondary" onclick="notifyMember('${jsq(m.id)}')">Notify</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteMember('${jsq(m.id)}')">Delete</button>
+      </td>
     </tr>`;
   }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No members found</td></tr>';
 }
 
 function filterMembers() {
   const q = document.getElementById('memberSearch').value.toLowerCase();
-  const filtered = state.members.filter(m => m.name.toLowerCase().includes(q) || m.phone.includes(q));
+  const filtered = state.members.filter(m => (m.name || '').toLowerCase().includes(q) || String(m.phone || '').includes(q));
   renderMembers(filtered);
 }
 
@@ -1698,7 +2006,7 @@ async function viewMember(id) {
   try {
     const data = await apiCall('GET', '/api/members/' + id);
     const m = data.member || data;
-    alert(`Name: ${m.name}\nPhone: ${m.phone}\nPackage: ${m.packageName || '-'}\nStart: ${m.startDate ? new Date(m.startDate).toLocaleDateString() : '-'}\nEnd: ${m.endDate ? new Date(m.endDate).toLocaleDateString() : '-'}`);
+    alert(`Name: ${esc(m.name)}\nPhone: ${esc(m.phone)}\nPackage: ${esc(m.packageName || '-')}\nStart: ${esc(fmtDate(m.startDate))}\nEnd: ${esc(fmtDate(m.endDate))}`);
   } catch (e) {}
 }
 
@@ -1709,7 +2017,7 @@ async function loadAdmissionForm() {
     state.packages = data.packages || [];
     const sel = document.getElementById('admPackage');
     sel.innerHTML = '<option value="">Select Package</option>' + state.packages.map(p =>
-      `<option value="${p._id || p.id}" data-price="${p.price}" data-duration="${p.duration}">${p.name} - ₹${p.price} (${p.duration} days)</option>`
+      `<option value="${esc(p.id)}" data-price="${esc(p.price)}" data-duration="${esc(p.duration)}">${esc(p.name)} - ₹${esc(p.price)} (${esc(p.duration)} days)</option>`
     ).join('');
   } catch (e) {}
 }
@@ -1726,9 +2034,11 @@ function calcAdmissionPrice() {
   document.getElementById('admFinalPrice').textContent = '₹' + Math.round(final_);
 
   const startDate = document.getElementById('admStartDate').value;
+  const extra = parseInt(document.getElementById('admExtraDays').value, 10) || 0;
   if (startDate && duration) {
-    const end = new Date(startDate);
-    end.setDate(end.getDate() + duration);
+    const end = new Date(startDate + 'T00:00:00.000Z');
+    // Mirrors the server: package duration plus any extra days purchased.
+    end.setUTCDate(end.getUTCDate() + duration + extra);
     document.getElementById('admEndDate').value = end.toISOString().split('T')[0];
   }
 }
@@ -1742,6 +2052,7 @@ async function submitAdmission() {
   const packageId = document.getElementById('admPackage').value;
   const startDate = document.getElementById('admStartDate').value;
   const discount = parseInt(document.getElementById('admDiscount').value) || 0;
+  const extraDays = parseInt(document.getElementById('admExtraDays').value, 10) || 0;
 
   if (!name || !phone || !packageId || !startDate) {
     showToast('Please fill required fields (Name, Phone, Package, Start Date)', 'error');
@@ -1749,10 +2060,13 @@ async function submitAdmission() {
   }
 
   try {
-    await apiCall('POST', '/api/auth/register', { name, phone, email, gender, dob, packageId, startDate, discount });
+    await apiCall('POST', '/api/auth/register',
+      { name, phone, email, gender, dob, packageId, startDate, discount, extraDays });
     showToast('Member admitted successfully!');
     document.getElementById('admName').value = '';
     document.getElementById('admPhone').value = '';
+    document.getElementById('admExtraDays').value = '0';
+    calcAdmissionPrice();
     document.getElementById('admEmail').value = '';
     document.getElementById('admGender').value = '';
     document.getElementById('admDob').value = '';
@@ -1774,7 +2088,7 @@ async function loadAttendance() {
     state.members = memData.members || [];
     const sel = document.getElementById('attendanceMemberSelect');
     sel.innerHTML = '<option value="">Select Member</option>' + state.members.map(m =>
-      `<option value="${m._id || m.id}">${m.name}</option>`
+      `<option value="${esc(m.id)}">${esc(m.name)}</option>`
     ).join('');
     renderAttendance(state.attendance);
   } catch (e) {}
@@ -1784,13 +2098,13 @@ function renderAttendance(list) {
   document.getElementById('attendanceTable').innerHTML = list.length ? list.map(a => {
     const duration = a.checkIn && a.checkOut ? Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 60000) + ' min' : '-';
     return `<tr>
-      <td>${a.memberName || '-'}</td>
-      <td>${a.date ? new Date(a.date).toLocaleDateString() : (a.checkIn ? new Date(a.checkIn).toLocaleDateString() : '-')}</td>
-      <td>${a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : '-'}</td>
-      <td>${a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : '-'}</td>
-      <td>${duration}</td>
-      <td><span class="badge ${a.checkOut ? 'badge-success' : 'badge-warning'}">${a.checkOut ? 'Complete' : 'Active'}</span></td>
-      <td>${!a.checkOut ? `<button class="btn btn-sm btn-warning" onclick="forceCheckout('${a.memberId || a.member}')">Force Checkout</button>` : '-'}</td>
+      <td>${esc(a.memberName || '-')}</td>
+      <td>${esc(fmtDate(a.checkIn))}</td>
+      <td>${esc(fmtTime(a.checkIn))}</td>
+      <td>${esc(fmtTime(a.checkOut))}</td>
+      <td>${esc(duration)}</td>
+      <td><span class="badge ${a.checkOut ? 'badge-success' : 'badge-warning'}">${esc(a.checkOut ? 'Complete' : 'Active')}</span></td>
+      <td>${!a.checkOut ? `<button class="btn btn-sm btn-warning" onclick="forceCheckout('${jsq(a.memberId)}')">Force Checkout</button>` : '-'}</td>
     </tr>`;
   }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No attendance records</td></tr>';
 }
@@ -1831,10 +2145,10 @@ async function loadPackages() {
     state.packages = data.packages || [];
     document.getElementById('packagesTable').innerHTML = state.packages.length ? state.packages.map(p =>
       `<tr>
-        <td>${p.name}</td><td>${p.duration} days</td><td>₹${p.price}</td><td>${p.description || '-'}</td>
+        <td>${esc(p.name)}</td><td>${esc(p.duration)} days</td><td>₹${esc(p.price)}</td><td>${esc(p.description || '-')}</td>
         <td>
-          <button class="btn btn-sm btn-warning" onclick="editPackage('${p._id || p.id}','${p.name}',${p.duration},${p.price},'${(p.description||'').replace(/'/g,"\\'")}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deletePackage('${p._id || p.id}')">Delete</button>
+          <button class="btn btn-sm btn-warning" onclick="editPackage('${jsq(p.id)}','${jsq(p.name)}',${jsq(p.duration)},${jsq(p.price)},${jsq(p.description || '')})">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePackage('${jsq(p.id)}')">Delete</button>
         </td>
       </tr>`
     ).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No packages</td></tr>';
@@ -1921,16 +2235,16 @@ async function deletePackage(id) {
 function renderExercises(list) {
   document.getElementById('exercisesList').innerHTML = list.length ? list.map(e => `
     <div class="exercise-card">
-      <div class="gif-container" ${e.gifUrl ? `onclick="openGifLightbox('${e.gifUrl}')" style="cursor:pointer"` : ''}>
-        ${e.gifUrl ? `<img src="${e.gifUrl}" alt="${e.name}" style="pointer-events:none" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-muted)\\'>🏋️ No GIF</div>'">` :
+      <div class="gif-container" ${e.gifUrl ? `onclick="openGifLightbox('${jsq(e.gifUrl)}')" style="cursor:pointer"` : ''}>
+        ${e.gifUrl ? `<img src="${esc(safeUrl(e.gifUrl))}" alt="${esc(e.name)}" style="pointer-events:none" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;text-align:center;color:var(--text-muted)\\'>🏋️ No GIF</div>'">` :
           `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:48px;">🏋️</div>`}
       </div>
       <div class="exercise-info">
-        <h4>${e.name}</h4>
-        <p><span class="badge badge-info">${e.category}</span> <span class="badge badge-warning">${e.difficulty}</span></p>
-        <p style="margin-top:4px;">${e.muscleGroup || ''}</p>
-        ${e.videoUrl ? `<a href="${e.videoUrl}" target="_blank" class="btn btn-sm btn-primary" style="margin-top:8px;">Watch Video</a>` : ''}
-        <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteExercise('${e._id || e.id}')">Delete</button>
+        <h4>${esc(e.name)}</h4>
+        <p><span class="badge badge-info">${esc(e.category)}</span> <span class="badge badge-warning">${esc(e.difficulty)}</span></p>
+        <p style="margin-top:4px;">${esc(e.muscleGroup || '')}</p>
+        ${e.videoUrl ? `<a href="${esc(safeUrl(e.videoUrl))}" target="_blank" class="btn btn-sm btn-primary" style="margin-top:8px;">Watch Video</a>` : ''}
+        <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteExercise('${jsq(e.id)}')">Delete</button>
       </div>
     </div>
   `).join('') : '<div class="empty-state"><div class="icon">🏋️</div><p>No exercises yet</p></div>';
@@ -1984,31 +2298,91 @@ async function deleteExercise(id) {
 }
 
 // FOOD DATABASE
+/** Loads the food list from the database. Falls back to the bundled INDIAN_FOOD_DB
+ *  so the page still renders if the API is unreachable. */
+async function loadFoods() {
+  try {
+    const data = await apiCall('GET', '/api/foods');
+    state.foods = data.foods || [];
+  } catch (e) {
+    if (!state.foods.length) state.foods = INDIAN_FOOD_DB.slice();
+  }
+  if (!state.foods.length) state.foods = INDIAN_FOOD_DB.slice();
+  renderFoodDatabase();
+}
+
+function closeFoodModal() {
+  document.getElementById('foodModal').classList.remove('show');
+}
+
+function openFoodModal() {
+  document.getElementById('foodName').value = '';
+  document.getElementById('foodServing').value = '';
+  document.getElementById('foodCalories').value = '';
+  document.getElementById('foodCategory').value = '';
+  document.getElementById('foodModal').classList.add('show');
+}
+
+async function saveFood() {
+  const name = document.getElementById('foodName').value.trim();
+  const category = document.getElementById('foodCategory').value.trim().toLowerCase();
+  const calories = document.getElementById('foodCalories').value;
+  if (!name || !category) { showToast('Name and category are required', 'error'); return; }
+  try {
+    await apiCall('POST', '/api/foods', {
+      name,
+      category,
+      calories: calories === '' ? 0 : Number(calories),
+      serving: document.getElementById('foodServing').value.trim(),
+    });
+    showToast('Food added');
+    closeFoodModal();
+    loadFoods();
+  } catch (e) { /* toasted by apiCall */ }
+}
+
+async function deleteFood(id) {
+  if (!confirm('Remove this food from the database?')) return;
+  try {
+    await apiCall('DELETE', '/api/foods', { id });
+    showToast('Food removed');
+    loadFoods();
+  } catch (e) { /* toasted by apiCall */ }
+}
+
+
 function renderFoodDatabase() {
   const search = (document.getElementById('foodDbSearch')?.value || '').toLowerCase();
-  const filtered = INDIAN_FOOD_DB.filter(f => f.name.toLowerCase().includes(search) || f.category.toLowerCase().includes(search));
+  const source = (state.foods && state.foods.length) ? state.foods : INDIAN_FOOD_DB;
+  const filtered = source.filter(f =>
+    String(f.name || '').toLowerCase().includes(search)
+    || String(f.category || '').toLowerCase().includes(search));
   const grouped = {};
   filtered.forEach(f => {
     if (!grouped[f.category]) grouped[f.category] = [];
     grouped[f.category].push(f);
   });
   const catLabels = {
-    rice: '🍚 Rice & Grains', bread: '🫓 Roti & Bread', dal: '🥣 Dal & Legumes',
-    vegetable: '🥬 Vegetables', fish: '🐟 Fish', chicken: '🍗 Chicken',
-    mutton: '🍖 Mutton', egg: '🥚 Eggs', dairy: '🥛 Dairy', snack: '🥘 Snacks',
-    bengali: '🇧🇩 Bengali Specials', beverage: '🥤 Beverages', fruit: '🍎 Fruits'
+    rice: '\u{1F35A} Rice & Grains', bread: '\u{1FA95} Roti & Bread', dal: '\u{1F963} Dal & Legumes',
+    vegetable: '\u{1F966} Vegetables', fish: '\u{1F41F} Fish', chicken: '\u{1F357} Chicken',
+    mutton: '\u{1F356} Mutton', egg: '\u{1F95A} Eggs', dairy: '\u{1F95B} Dairy', snack: '\u{1F958} Snacks',
+    bengali: '\u{1F1E7}\u{1F1E7} Bengali Specials', beverage: '\u{1F964} Beverages', fruit: '\u{1F34E} Fruits'
   };
   let html = '';
   for (const [cat, items] of Object.entries(grouped)) {
-    html += `<div style="grid-column:1/-1;margin-top:16px;"><h3 style="color:var(--primary);font-size:16px;margin-bottom:8px;">${catLabels[cat] || cat}</h3></div>`;
+    html += `<div style="grid-column:1/-1;margin-top:16px;"><h3 style="color:var(--primary);font-size:16px;margin-bottom:8px;">${esc(catLabels[cat] || cat)}</h3></div>`;
     items.forEach(f => {
-      html += `<div class="food-item" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;">
-        <div><div class="food-name">${f.name}</div><div class="food-serving">${f.serving}</div></div>
-        <div class="food-cal">${f.calories} kcal</div>
+      // Markup sink: literal template, every food field passed through esc()/jsq().
+      html += `<div class="food-item" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;">
+        <div><div class="food-name">${esc(f.name)}</div><div class="food-serving">${esc(f.serving || '')}</div></div>
+        <div style="display:flex;align-items:center;gap:10px;white-space:nowrap;">
+          <div class="food-cal">${esc(f.calories)} kcal</div>
+          ${f.id ? `<button class="btn btn-sm btn-danger" onclick="deleteFood('${jsq(f.id)}')">Delete</button>` : ''}
+        </div>
       </div>`;
     });
   }
-  if (!filtered.length) html = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">🍛</div><p>No foods found</p></div>';
+  if (!filtered.length) html = '<div class="empty-state" style="grid-column:1/-1;"><div class="icon">\u{1F35B}</div><p>No foods found</p></div>';
   document.getElementById('foodDatabaseList').innerHTML = html;
 }
 
@@ -2031,21 +2405,16 @@ function renderDietTemplates() {
   }
   list.innerHTML = state.dietTemplates.map(t => {
     let totalCal = 0;
-    let meals = t.meals;
-    if (typeof meals === 'string') { try { meals = JSON.parse(meals); } catch(e) { meals = {}; } }
-    if (meals) {
-      for (const meal of Object.values(meals)) {
-        if (Array.isArray(meal)) meal.forEach(m => totalCal += (m.calories || 0) * (m.servings || 1));
-      }
-    }
+    const meals = typeof t.meals === 'string' ? safeParse(t.meals, {}) : t.meals;
+    normaliseMeals(meals).forEach(m => totalCal += (m.calories || 0) * (m.servings || 1));
     return `<div class="template-card diet-card">
-      <h4>${t.name}</h4>
-      <p>${t.description || 'No description'}</p>
+      <h4>${esc(t.name)}</h4>
+      <p>${esc(t.description || 'No description')}</p>
       <div class="tags">
-        <span class="badge badge-diet">${totalCal} kcal</span>
+        <span class="badge badge-diet">${esc(totalCal)} kcal</span>
         <span class="badge badge-success">Diet</span>
       </div>
-      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteDietTemplate('${t._id || t.id}')">Delete</button>
+      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteDietTemplate('${jsq(t.id)}')">Delete</button>
     </div>`;
   }).join('');
 }
@@ -2115,11 +2484,12 @@ function searchFood(input, event) {
 
   if (query.length < 1) { suggestionsDiv.classList.remove('show'); return; }
 
-  const matches = INDIAN_FOOD_DB.filter(f => f.name.toLowerCase().includes(query)).slice(0, 10);
+  const foodSource = (state.foods && state.foods.length) ? state.foods : INDIAN_FOOD_DB;
+  const matches = foodSource.filter(f => String(f.name || '').toLowerCase().includes(query)).slice(0, 10);
   if (!matches.length) { suggestionsDiv.classList.remove('show'); return; }
 
   suggestionsDiv.innerHTML = matches.map((f, i) =>
-    `<div class="food-suggestion-item" onclick="selectFood('${meal}', '${id}', '${f.name.replace(/'/g, "\\'")}', ${f.calories})">${f.name}<span class="cal">${f.calories} kcal</span></div>`
+    `<div class="food-suggestion-item" onclick="selectFood('${jsq(meal)}', '${jsq(id)}', '${jsq(f.name)}', ${jsq(f.calories)})">${esc(f.name)}<span class="cal">${esc(f.calories)} kcal</span></div>`
   ).join('');
   suggestionsDiv.classList.add('show');
 }
@@ -2206,13 +2576,13 @@ function renderWorkoutTemplates() {
   }
   list.innerHTML = state.workoutTemplates.map(t => `
     <div class="template-card workout-card">
-      <h4>${t.name}</h4>
-      <p>${t.description || 'No description'}</p>
+      <h4>${esc(t.name)}</h4>
+      <p>${esc(t.description || 'No description')}</p>
       <div class="tags">
-        <span class="badge badge-info">${t.difficulty || 'All'}</span>
-        <span class="badge badge-workout">${(t.exercises || []).length} exercises</span>
+        <span class="badge badge-info">${esc(t.difficulty || 'All')}</span>
+        <span class="badge badge-workout">${esc((t.exercises || []).length)} exercises</span>
       </div>
-      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteWorkoutTemplate('${t._id || t.id}')">Delete</button>
+      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteWorkoutTemplate('${jsq(t.id)}')">Delete</button>
     </div>
   `).join('');
 }
@@ -2252,10 +2622,10 @@ function renderExercisePicker() {
   const search = document.getElementById('wtExerciseSearch').value.toLowerCase();
   const filtered = state.exercises.filter(e => e.name.toLowerCase().includes(search));
   document.getElementById('exercisePicker').innerHTML = filtered.map(e => `
-    <div class="exercise-picker-item" onclick="toggleExerciseSelection('${e._id || e.id}')">
-      ${e.gifUrl ? `<img src="${e.gifUrl}" alt="${e.name}" onerror="this.style.display='none'">` : ''}
-      <div class="name">${e.name}</div>
-      <p>${e.category} · ${e.muscleGroup || ''}</p>
+    <div class="exercise-picker-item" onclick="toggleExerciseSelection('${jsq(e.id)}')">
+      ${e.gifUrl ? `<img src="${esc(safeUrl(e.gifUrl))}" alt="${esc(e.name)}" onerror="this.style.display='none'">` : ''}
+      <div class="name">${esc(e.name)}</div>
+      <p>${esc(e.category)} · ${esc(e.muscleGroup || '')}</p>
     </div>
   `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">No exercises found</div>';
 }
@@ -2267,8 +2637,8 @@ function toggleExerciseSelection(id) {
   if (existing >= 0) {
     selectedWorkoutExercises.splice(existing, 1);
   } else {
-    const ex = state.exercises.find(e => (e._id || e.id) === id);
-    if (ex) selectedWorkoutExercises.push({ id: ex._id || ex.id, name: ex.name, sets: 3, reps: 10, duration: 0 });
+    const ex = state.exercises.find(e => e.id === id);
+    if (ex) selectedWorkoutExercises.push({ id: ex.id, name: ex.name, sets: 3, reps: 10, duration: 0 });
   }
   renderSelectedExercises();
   renderExercisePicker();
@@ -2284,7 +2654,7 @@ function renderSelectedExercises() {
     <div class="selected-exercise-item" draggable="true" data-index="${i}"
          ondragstart="dragExerciseStart(event, ${i})" ondragover="dragExerciseOver(event)" ondrop="dragExerciseDrop(event, ${i})">
       <span class="drag-handle">⋮⋮</span>
-      <span style="flex:1;font-weight:500;">${e.name}</span>
+      <span style="flex:1;font-weight:500;">${esc(e.name)}</span>
       <div class="exercise-details">
         <div><label>Sets</label><input type="number" value="${e.sets}" min="1" onchange="selectedWorkoutExercises[${i}].sets=parseInt(this.value)"></div>
         <div><label>Reps</label><input type="number" value="${e.reps}" min="1" onchange="selectedWorkoutExercises[${i}].reps=parseInt(this.value)"></div>
@@ -2314,14 +2684,14 @@ function renderSelectedExercises() {
     return;
   }
   container.innerHTML = selectedWorkoutExercises.map((ex, i) => {
-    const exercise = state.exercises.find(e => (e._id || e.id) === ex.id);
+    const exercise = state.exercises.find(e => e.id === ex.id);
     return `<div class="selected-exercise-item" draggable="true" ondragstart="dragWorkoutExercise(event, ${i})" ondragover="event.preventDefault()" ondrop="dropWorkoutExercise(event, ${i})">
       <span class="drag-handle">⋮⋮</span>
       <div style="width:40px;height:30px;background:#111;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
         ${exercise?.gifUrl ? `<img src="${exercise.gifUrl}" style="width:100%;height:100%;object-fit:cover;">` : '<span style="font-size:10px;">🏋️</span>'}
       </div>
       <div style="flex:1;">
-        <strong style="font-size:13px;">${exercise?.name || ex.id}</strong>
+        <strong style="font-size:13px;">${esc(exercise?.name || ex.id)}</strong>
       </div>
       <div class="exercise-details">
         <div><input type="number" value="${ex.sets || 3}" min="1" onchange="updateWorkoutExercise(${i},'sets',this.value)"><label>Sets</label></div>
@@ -2400,7 +2770,7 @@ async function loadChartData() {
 
     const sel = document.getElementById('chartMemberSelect');
     sel.innerHTML = '<option value="">Select Member</option>' + state.members.map(m =>
-      `<option value="${m._id || m.id}">${m.name}</option>`
+      `<option value="${esc(m.id)}">${esc(m.name)}</option>`
     ).join('');
 
     renderAvailableCharts();
@@ -2408,33 +2778,28 @@ async function loadChartData() {
 }
 
 function switchChartTab(tab) {
-  state.chartTab = tab;
+  state.chartTab = String(tab || '').toLowerCase();
   state.selectedChartTemplate = null;
   document.querySelectorAll('#page-charts .tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('#page-charts .tab')[tab === 'diet' ? 0 : 1].classList.add('active');
+  document.querySelectorAll('#page-charts .tab')[String(tab || '').toLowerCase() === 'diet' ? 0 : 1].classList.add('active');
   renderAvailableCharts();
 }
 
 function renderAvailableCharts() {
   const container = document.getElementById('availableCharts');
-  if (state.chartTab === 'diet') {
+  if (String(state.chartTab || '').toLowerCase() === 'diet') {
     if (!state.dietTemplates.length) {
       container.innerHTML = '<div class="empty-state"><div class="icon">🥗</div><p>No diet templates. Create one first.</p></div>';
       return;
     }
     container.innerHTML = state.dietTemplates.map(t => {
       let totalCal = 0;
-      let meals = t.meals;
-      if (typeof meals === 'string') { try { meals = JSON.parse(meals); } catch(e) { meals = {}; } }
-      if (meals) {
-        for (const meal of Object.values(meals)) {
-          if (Array.isArray(meal)) meal.forEach(m => totalCal += (m.calories || 0) * (m.servings || 1));
-        }
-      }
-      return `<div class="template-card diet-card" onclick="selectChartTemplate('${t._id || t.id}', 'diet', this)">
-        <h4>${t.name}</h4>
-        <p>${t.description || ''}</p>
-        <div class="tags"><span class="badge badge-diet">${totalCal} kcal</span></div>
+      const meals = typeof t.meals === 'string' ? safeParse(t.meals, {}) : t.meals;
+      normaliseMeals(meals).forEach(m => totalCal += (m.calories || 0) * (m.servings || 1));
+      return `<div class="template-card diet-card" onclick="selectChartTemplate('${jsq(t.id)}', 'diet', this)">
+        <h4>${esc(t.name)}</h4>
+        <p>${esc(t.description || '')}</p>
+        <div class="tags"><span class="badge badge-diet">${esc(totalCal)} kcal</span></div>
       </div>`;
     }).join('');
   } else {
@@ -2443,10 +2808,10 @@ function renderAvailableCharts() {
       return;
     }
     container.innerHTML = state.workoutTemplates.map(t =>
-      `<div class="template-card workout-card" onclick="selectChartTemplate('${t._id || t.id}', 'workout', this)">
-        <h4>${t.name}</h4>
-        <p>${t.description || ''}</p>
-        <div class="tags"><span class="badge badge-info">${t.difficulty || 'All'}</span> <span class="badge badge-workout">${(t.exercises || []).length} exercises</span></div>
+      `<div class="template-card workout-card" onclick="selectChartTemplate('${jsq(t.id)}', 'workout', this)">
+        <h4>${esc(t.name)}</h4>
+        <p>${esc(t.description || '')}</p>
+        <div class="tags"><span class="badge badge-info">${esc(t.difficulty || 'All')}</span> <span class="badge badge-workout">${esc((t.exercises || []).length)} exercises</span></div>
       </div>`
     ).join('');
   }
@@ -2455,7 +2820,7 @@ function renderAvailableCharts() {
 function selectChartTemplate(id, type, el) {
   document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
-  state.selectedChartTemplate = { id, type };
+  state.selectedChartTemplate = { id, type: String(type || '').toLowerCase() };
 }
 
 async function loadMemberCharts() {
@@ -2478,30 +2843,26 @@ function renderAssignedCharts() {
     return;
   }
   container.innerHTML = state.memberCharts.map(c => {
+    const ctype = String(c.type || '').toLowerCase();
     let chartName = 'Chart';
     let chartDetail = '';
-    try {
-      const content = JSON.parse(c.content);
+    const content = safeParse(c.content, null);
+    if (content) {
       chartName = content.name || 'Chart';
-      if (c.type === 'diet' && content.meals) {
+      if (ctype === 'diet' && content.meals) {
         let tc = 0;
-        const meals = content.meals;
-        if (typeof meals === 'object') {
-          for (const meal of Object.values(meals)) {
-            if (Array.isArray(meal)) meal.forEach(m => tc += (m.calories || 0) * (m.servings || 1));
-          }
-        }
+        normaliseMeals(content.meals).forEach(m => tc += (m.calories || 0) * (m.servings || 1));
         chartDetail = tc + ' kcal';
-      } else if (c.type === 'workout' && content.exercises) {
+      } else if (ctype === 'workout' && content.exercises) {
         chartDetail = content.exercises.length + ' exercises';
       }
-    } catch(e) {
+    } else {
       chartName = c.content || 'Chart';
     }
-    return `<div class="assigned-chart-item" style="border-left-color: ${c.type === 'diet' ? 'var(--diet-green)' : 'var(--workout-blue)'};">
+    return `<div class="assigned-chart-item" style="border-left-color: ${esc(ctype === 'diet' ? 'var(--diet-green)' : 'var(--workout-blue)')};">
       <div class="chart-info">
-        <h5>${chartName}</h5>
-        <p><span class="badge badge-${c.type === 'diet' ? 'diet' : 'workout'}">${c.type}</span> ${chartDetail ? chartDetail + ' · ' : ''}Assigned: ${c.startDate ? new Date(c.startDate).toLocaleDateString() : 'N/A'}</p>
+        <h5>${esc(chartName)}</h5>
+        <p><span class="badge badge-${esc(ctype === 'diet' ? 'diet' : 'workout')}">${esc(ctype.toUpperCase())}</span> ${chartDetail ? esc(chartDetail) + ' · ' : ''}Assigned: ${esc(fmtDate(c.startDate))}</p>
       </div>
     </div>`;
   }).join('');
@@ -2513,17 +2874,17 @@ async function assignSelectedChart() {
   if (!state.selectedChartTemplate) { showToast('Select a template first', 'error'); return; }
   const { id, type } = state.selectedChartTemplate;
   const templates = type === 'diet' ? state.dietTemplates : state.workoutTemplates;
-  const tpl = templates.find(t => (t._id || t.id) === id);
+  const tpl = templates.find(t => t.id === id);
   if (!tpl) { showToast('Template not found', 'error'); return; }
   let tplData = { name: tpl.name, description: tpl.description };
   if (type === 'diet') {
     let meals = tpl.meals;
-    if (typeof meals === 'string') { try { meals = JSON.parse(meals); } catch(e) { meals = {}; } }
+    if (typeof meals === 'string') meals = safeParse(meals, {});
     tplData.meals = meals;
     tplData.targetCalories = tpl.targetCalories;
   } else {
     let exercises = tpl.exercises;
-    if (typeof exercises === 'string') { try { exercises = JSON.parse(exercises); } catch(e) { exercises = []; } }
+    if (typeof exercises === 'string') exercises = safeParse(exercises, []);
     tplData.exercises = exercises;
     tplData.difficulty = tpl.difficulty;
   }
@@ -2557,9 +2918,10 @@ document.getElementById('loginPassword').addEventListener('keypress', function(e
 (function init() {
   const token = localStorage.getItem('rawfit_token');
   const user = localStorage.getItem('rawfit_user');
-  if (token && user) {
+  const parsed = safeParse(user, null);
+  if (token && parsed && parsed.id) {
     state.token = token;
-    state.user = JSON.parse(user);
+    state.user = parsed;
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('currentUser').textContent = state.user.name || state.user.phone || 'Admin';

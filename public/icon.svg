@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="RAWfit">
+  <rect width="512" height="512" rx="112" fill="#2563eb"/>
+  <g fill="#fff">
+    <rect x="86" y="228" width="340" height="56" rx="28"/>
+    <rect x="56" y="196" width="52" height="120" rx="22"/>
+    <rect x="404" y="196" width="52" height="120" rx="22"/>
+    <rect x="128" y="168" width="44" height="176" rx="20"/>
+    <rect x="340" y="168" width="44" height="176" rx="20"/>
+  </g>
+  <text x="256" y="452" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+        font-size="76" font-weight="800" fill="#fff" letter-spacing="4">RAWfit</text>
+</svg>
