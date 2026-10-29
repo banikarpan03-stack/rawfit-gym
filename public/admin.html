@@ -863,26 +863,30 @@ tr:hover td { background: rgba(0,0,0,0.02); }
       <div class="sidebar-menu-item" data-page="attendance" onclick="navigateTo('attendance')">
         <span class="icon">📋</span> Attendance
       </div>
-      <div class="sidebar-menu-section">Templates</div>
-      <div class="sidebar-menu-item" data-page="dietTemplates" onclick="navigateTo('dietTemplates')">
+      <div class="sidebar-menu-section" data-admin-only>Templates</div>
+      <div class="sidebar-menu-item" data-admin-only data-page="dietTemplates" onclick="navigateTo('dietTemplates')">
         <span class="icon">🥗</span> Diet Templates
       </div>
-      <div class="sidebar-menu-item" data-page="workoutTemplates" onclick="navigateTo('workoutTemplates')">
+      <div class="sidebar-menu-item" data-admin-only data-page="workoutTemplates" onclick="navigateTo('workoutTemplates')">
         <span class="icon">💪</span> Workout Templates
       </div>
       <div class="sidebar-menu-section">Assignment</div>
       <div class="sidebar-menu-item" data-page="charts" onclick="navigateTo('charts')">
         <span class="icon">📝</span> Chart Assignment
       </div>
-      <div class="sidebar-menu-section">Library</div>
-      <div class="sidebar-menu-item" data-page="packages" onclick="navigateTo('packages')">
+      <div class="sidebar-menu-section" data-admin-only>Library</div>
+      <div class="sidebar-menu-item" data-admin-only data-page="packages" onclick="navigateTo('packages')">
         <span class="icon">📦</span> Packages
       </div>
-      <div class="sidebar-menu-item" data-page="exercises" onclick="navigateTo('exercises')">
+      <div class="sidebar-menu-item" data-admin-only data-page="exercises" onclick="navigateTo('exercises')">
         <span class="icon">🏋️</span> Exercise Library
       </div>
-      <div class="sidebar-menu-item" data-page="foodDatabase" onclick="navigateTo('foodDatabase')">
+      <div class="sidebar-menu-item" data-admin-only data-page="foodDatabase" onclick="navigateTo('foodDatabase')">
         <span class="icon">🍛</span> Food Database
+      </div>
+      <div class="sidebar-menu-section" data-admin-only>Team</div>
+      <div class="sidebar-menu-item" data-admin-only data-page="staff" onclick="navigateTo('staff')">
+        <span class="icon">&#129489;&#8205;&#128188;</span> Staff
       </div>
       <div class="sidebar-menu-section"></div>
       <div class="sidebar-menu-item" onclick="handleLogout()">
@@ -949,6 +953,20 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     </div>
 
     <!-- Admission -->
+    <div id="page-staff" class="page-content hidden">
+      <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
+        <h1 class="page-title" style="margin:0;">Staff</h1>
+        <button class="btn btn-primary" onclick="openStaffModal()">+ Add Staff</button>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Actions</th></tr></thead>
+          <tbody id="staffTable"></tbody>
+        </table>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">Staff can admit members, mark attendance, edit member records and record payments. Only admins manage staff, delete members, or curate the libraries.</p>
+    </div>
+
     <div id="page-admission" class="page-content hidden">
       <h1 class="page-title">New Admission</h1>
       <div class="card">
@@ -995,6 +1013,10 @@ tr:hover td { background: rgba(0,0,0,0.02); }
               <label>Extra Days</label>
               <input type="number" id="admExtraDays" value="0" min="0" max="365" placeholder="0" oninput="calcAdmissionPrice()">
             </div>
+            <div class="form-group">
+              <label>Member Password (blank = auto-generate)</label>
+              <input type="text" id="admPassword" placeholder="Optional" autocomplete="new-password">
+            </div>
           </div>
           <div class="stats-grid" style="margin-top:16px;">
             <div class="stat-card">
@@ -1009,6 +1031,11 @@ tr:hover td { background: rgba(0,0,0,0.02); }
               <h3>Final Price</h3>
               <div class="value" id="admFinalPrice">₹0</div>
             </div>
+          </div>
+          <div id="admGenerated" class="hidden" style="margin-top:16px;padding:12px 16px;border-radius:8px;background:#ecfdf5;border:1px solid #10b981;color:#065f46;">
+            <strong>Member password:</strong>
+            <span id="admGeneratedValue" style="font-family:monospace;font-size:18px;font-weight:700;letter-spacing:1px;"></span>
+            <div style="font-size:12px;margin-top:4px;">Write this down and hand it to the member. It is shown once and cannot be retrieved later.</div>
           </div>
           <button class="btn btn-primary" style="margin-top:16px;" onclick="submitAdmission()">Submit Admission</button>
         </div>
@@ -1174,6 +1201,42 @@ tr:hover td { background: rgba(0,0,0,0.02); }
 </div>
 
 <!-- Member Modal -->
+<div id="staffModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="staffModalTitle">Add Staff</h3>
+      <button class="modal-close" onclick="closeStaffModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="staffId">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="staffName" placeholder="Enter full name">
+      </div>
+      <div class="form-group">
+        <label>Phone Number (used to sign in)</label>
+        <input type="tel" id="staffPhone" placeholder="Enter phone number" maxlength="15">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="staffRole">
+          <option value="STAFF">Staff</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Password <span id="staffPwHint" style="font-weight:400;opacity:.75;">(at least 6 characters)</span></label>
+        <input type="text" id="staffPassword" autocomplete="new-password" placeholder="Set a password">
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);">The password cannot be the phone number — the phone is already the username.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeStaffModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStaff()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="passwordModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-header">
@@ -1772,6 +1835,87 @@ async function savePassword() {
   }
 }
 
+/* ---------------------------------------------------------------- staff ----- */
+
+/** Hide admin-only navigation from staff, and move them off a page they cannot use. */
+function applyRolePermissions() {
+  document.querySelectorAll('[data-admin-only]').forEach(function (el) {
+    el.classList.toggle('hidden', !isAdmin());
+  });
+  if (!isAdmin() && ADMIN_PAGES.indexOf(state.currentPage) !== -1) navigateTo('dashboard');
+}
+
+async function loadStaff() {
+  try {
+    const data = await apiCall('GET', '/api/staff');
+    const rows = data.staff || [];
+    document.getElementById('staffTable').innerHTML = rows.length ? rows.map(function (s) {
+      return `<tr>
+        <td>${esc(s.name)}</td>
+        <td>${esc(s.phone)}</td>
+        <td>${esc(s.role)}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" onclick="openStaffModal('${jsq(s.id)}','${jsq(s.name)}','${jsq(s.phone)}','${jsq(s.role)}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteStaff('${jsq(s.id)}')">Remove</button>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No staff accounts yet</td></tr>';
+  } catch (e) {
+    showToast(e.message || 'Could not load staff', 'error');
+  }
+}
+
+function openStaffModal(id, name, phone, role) {
+  document.getElementById('staffModalTitle').textContent = id ? 'Edit Staff' : 'Add Staff';
+  document.getElementById('staffId').value = id || '';
+  document.getElementById('staffName').value = name || '';
+  document.getElementById('staffPhone').value = phone || '';
+  document.getElementById('staffRole').value = role || 'STAFF';
+  document.getElementById('staffPassword').value = '';
+  document.getElementById('staffPwHint').textContent = id
+    ? '(leave blank to keep the current one)' : '(at least 6 characters)';
+  document.getElementById('staffModal').classList.add('show');
+}
+
+function closeStaffModal() {
+  document.getElementById('staffModal').classList.remove('show');
+}
+
+async function saveStaff() {
+  const id = document.getElementById('staffId').value;
+  const name = document.getElementById('staffName').value.trim();
+  const phone = document.getElementById('staffPhone').value.trim();
+  const role = document.getElementById('staffRole').value;
+  const password = document.getElementById('staffPassword').value;
+
+  if (!name || !phone) { showToast('Name and phone are required', 'error'); return; }
+  if (!id && !password) { showToast('A password is required for a new account', 'error'); return; }
+
+  const body = { name: name, phone: phone, role: role };
+  if (password) body.password = password;
+
+  try {
+    if (id) await apiCall('PUT', '/api/staff/' + id, body);
+    else await apiCall('POST', '/api/staff', body);
+    closeStaffModal();
+    showToast(id ? 'Staff account updated' : 'Staff account created');
+    loadStaff();
+  } catch (err) {
+    showToast(err.message || 'Could not save the account', 'error');
+  }
+}
+
+async function deleteStaff(id) {
+  if (!confirm('Remove this staff account? They lose access immediately.')) return;
+  try {
+    await apiCall('DELETE', '/api/staff/' + id);
+    showToast('Staff account removed');
+    loadStaff();
+  } catch (err) {
+    showToast(err.message || 'Could not remove the account', 'error');
+  }
+}
+
 async function apiCall(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
   if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
@@ -1803,7 +1947,7 @@ async function handleLogin() {
     return;
   }
   try {
-    const data = await apiCall('POST', '/api/auth/login', { phone, name: password });
+    const data = await apiCall('POST', '/api/auth/login', { phone, password });
     state.token = data.token;
     state.user = data.user;
     localStorage.setItem('rawfit_token', data.token);
@@ -1811,6 +1955,7 @@ async function handleLogin() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('currentUser').textContent = data.user.name || data.user.phone;
+    applyRolePermissions();
     loadDashboard();
   } catch (e) {
     document.getElementById('loginError').textContent = e.message || 'Login failed';
@@ -1846,7 +1991,20 @@ function logoutOnExpiry() {
 }
 
 // NAVIGATION
+// Pages whose API endpoints are admin-only. Hiding the nav link is a courtesy;
+// navigateTo() is callable from the console, so the refusal has to live here.
+const ADMIN_PAGES = ['packages', 'exercises', 'foodDatabase', 'dietTemplates', 'workoutTemplates', 'staff'];
+
+function isAdmin() {
+  return !!(state.user && state.user.role === 'ADMIN');
+}
+
 function navigateTo(page) {
+  if (ADMIN_PAGES.indexOf(page) !== -1 && !isAdmin()) {
+    showToast('Admins only', 'error');
+    if (page !== 'dashboard') return navigateTo('dashboard');
+    return;
+  }
   document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
   document.getElementById('page-' + page).classList.remove('hidden');
   document.querySelectorAll('.sidebar-menu-item').forEach(i => i.classList.remove('active'));
@@ -1864,6 +2022,7 @@ function navigateTo(page) {
   else if (page === 'charts') loadChartData();
   else if (page === 'foodDatabase') loadFoods();
   else if (page === 'admission') loadAdmissionForm();
+  else if (page === 'staff') loadStaff();
 }
 
 function toggleSidebar(force) {
@@ -2123,9 +2282,21 @@ async function submitAdmission() {
   }
 
   try {
-    await apiCall('POST', '/api/auth/register',
-      { name, phone, email, gender, dob, packageId, startDate, discount, extraDays });
+    const password = document.getElementById('admPassword').value;
+    const res = await apiCall('POST', '/api/auth/register',
+      { name, phone, email, gender, dob, packageId, startDate, discount, extraDays, password });
     showToast('Member admitted successfully!');
+    // The server returns a generated password only on this one response.
+    const gp = res && res.member && res.member.generatedPassword;
+    const box = document.getElementById('admGenerated');
+    if (gp) {
+      document.getElementById('admGeneratedValue').textContent = gp;
+      box.classList.remove('hidden');
+      showToast('Password below — give it to ' + name, 'error');
+    } else {
+      box.classList.add('hidden');
+    }
+    document.getElementById('admPassword').value = '';
     document.getElementById('admName').value = '';
     document.getElementById('admPhone').value = '';
     document.getElementById('admExtraDays').value = '0';
@@ -2988,6 +3159,7 @@ document.getElementById('loginPassword').addEventListener('keypress', function(e
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('currentUser').textContent = state.user.name || state.user.phone || 'Admin';
+    applyRolePermissions();
     loadDashboard();
   }
 })();

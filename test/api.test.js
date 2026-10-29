@@ -26,6 +26,9 @@ let adminToken = null;
 let memberToken = null;
 let memberId = null;
 let otherMemberId = null;
+let memberPassword = null;
+let staffToken = null;
+let staffId = null;
 
 async function call(method, pathname, { body, token, raw } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -146,6 +149,10 @@ test("registering a member writes a matching payment row", async () => {
   });
   assert.equal(res.status, 201);
   memberId = res.data.member.id;
+  // No password was supplied, so one was generated and returned exactly once.
+  assert.ok(res.data.member.generatedPassword, "admission returns a generated password");
+  assert.ok(res.data.member.generatedPassword.length >= 8, "generated password is long enough");
+  memberPassword = res.data.member.generatedPassword;
   assert.match(res.data.member.uniqueCode, /^RM-\d{4}-/);
   assert.equal(res.data.member.endDate.slice(0, 10), "2027-01-04", "90 days + 5 extra");
   assert.equal(res.data.member.totalAmount, 1260, "1400 minus 10%");
@@ -213,10 +220,57 @@ test("member list never exposes the password hash", async () => {
 
 /* ---------------------------------------------------------- geofencing ------ */
 
-test("member login issues a token", async () => {
-  const res = await call("POST", "/api/auth/login", { body: { phone: "9000000001", name: "Asha Tester" } });
+test("member login issues a token, using the password not the name", async () => {
+  const res = await call("POST", "/api/auth/login", {
+    body: { phone: "9000000001", password: memberPassword },
+  });
   assert.equal(res.status, 200);
   memberToken = res.data.token;
+});
+
+test("a member's name is no longer accepted as a credential", async () => {
+  // This is the weakness the password replaced: a name is known to anyone who
+  // knows the person, so it could never be a secret.
+  const res = await call("POST", "/api/auth/login", {
+    body: { phone: "9000000001", password: "Asha Tester" },
+  });
+  assert.equal(res.status, 401);
+});
+
+test("the phone number cannot be used as its own password", async () => {
+  // The phone is the username; accepting it as the password is no factor at all.
+  const res = await call("POST", "/api/auth/register", {
+    token: adminToken,
+    body: {
+      name: "Phone Pass", phone: "9000000009", packageId: "quarterly",
+      startDate: "2026-10-01", password: "9000000009",
+    },
+  });
+  assert.equal(res.status, 400, "registration must refuse password == phone");
+});
+
+test("an explicitly supplied member password is what logs them in", async () => {
+  const reg = await call("POST", "/api/auth/register", {
+    token: adminToken,
+    body: {
+      name: "Given Pass", phone: "9000000010", packageId: "quarterly",
+      startDate: "2026-10-01", password: "chosen-by-staff-1",
+    },
+  });
+  assert.equal(reg.status, 201);
+  assert.equal(reg.data.member.generatedPassword, undefined, "no password is invented when one is given");
+
+  const ok = await call("POST", "/api/auth/login", {
+    body: { phone: "9000000010", password: "chosen-by-staff-1" },
+  });
+  assert.equal(ok.status, 200);
+
+  const wrong = await call("POST", "/api/auth/login", {
+    body: { phone: "9000000010", password: "Guessed Password" },
+  });
+  assert.equal(wrong.status, 401);
+
+  await call("DELETE", `/api/members/${reg.data.member.id}`, { token: adminToken });
 });
 
 test("check-in requires coordinates", async () => {
@@ -397,6 +451,127 @@ test("deleting a member removes their dependent rows too", async () => {
   assert.equal(res.status, 200);
   const gone = await call("GET", `/api/members/${otherMemberId}`, { token: adminToken });
   assert.equal(gone.status, 404);
+});
+
+/* ---------------------------------------------------------- staff accounts -- */
+
+test("a member cannot reach staff management at all", async () => {
+  const list = await call("GET", "/api/staff", { token: memberToken });
+  assert.equal(list.status, 403, "staff management is admin-only");
+
+  const create = await call("POST", "/api/staff", {
+    token: memberToken,
+    body: { name: "Mallory", phone: "9555000001", password: "longenough1" },
+  });
+  assert.equal(create.status, 403);
+});
+
+test("staff accounts can be created, log in, and do operational work", async () => {
+  const created = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Front Desk", phone: "9555000002", password: "desk-password-1", role: "STAFF" },
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.data));
+  staffId = created.data.staff.id;
+  assert.equal(created.data.staff.role, "STAFF");
+
+  const dupe = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Another", phone: "9555000002", password: "desk-password-1" },
+  });
+  assert.equal(dupe.status, 409, "phone numbers are unique");
+
+  const weak = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Another", phone: "9555000003", password: "short" },
+  });
+  assert.equal(weak.status, 400, "a short password is refused");
+
+  const phoneAsPassword = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Another", phone: "9555000004", password: "9555000004" },
+  });
+  assert.equal(phoneAsPassword.status, 400, "the phone cannot be the password");
+
+  const login = await call("POST", "/api/auth/login", {
+    body: { phone: "9555000002", password: "desk-password-1" },
+  });
+  assert.equal(login.status, 200);
+  staffToken = login.data.token;
+  assert.equal(login.data.user.role, "STAFF");
+
+  // operational: allowed
+  const members = await call("GET", "/api/members", { token: staffToken });
+  assert.equal(members.status, 200, "staff can view members");
+  const dash = await call("GET", "/api/dashboard", { token: staffToken });
+  assert.equal(dash.status, 200, "staff can see the dashboard");
+  const pay = await call("POST", "/api/payments", {
+    token: staffToken,
+    body: { memberId, amount: 500, method: "cash" },
+  });
+  assert.equal(pay.status, 201, "staff can record a payment");
+});
+
+test("staff cannot do admin-only work", async () => {
+  const deleteMember = await call("DELETE", `/api/members/${otherMemberId}`, { token: staffToken });
+  assert.equal(deleteMember.status, 403, "deleting members stays admin-only");
+
+  const packageWrite = await call("POST", "/api/packages", {
+    token: staffToken,
+    body: { name: "Nope", duration: 10, price: 1 },
+  });
+  assert.equal(packageWrite.status, 403, "package curation stays admin-only");
+
+  const staffWrite = await call("POST", "/api/staff", {
+    token: staffToken,
+    body: { name: "Nope", phone: "9555000009", password: "longenough1" },
+  });
+  assert.equal(staffWrite.status, 403, "staff cannot create staff");
+
+  const reseed = await call("POST", "/api/admin/reseed", { token: staffToken, body: {} });
+  assert.equal(reseed.status, 403, "admin utilities stay admin-only");
+});
+
+test("staff safety rails: no self-deletion, always one admin left", async () => {
+  const me = await call("POST", "/api/auth/login", {
+    body: { phone: "9999999999", password: "admin" },
+  });
+  assert.equal(me.status, 200);
+  const myId = me.data.user.id;
+
+  const selfDelete = await call("DELETE", `/api/staff/${myId}`, { token: adminToken });
+  assert.equal(selfDelete.status, 400, "an admin must not be able to delete themselves");
+
+  const demoteSelf = await call("PUT", `/api/staff/${myId}`, { token: adminToken, body: { role: "STAFF" } });
+  assert.equal(demoteSelf.status, 400, "the last admin must not be demotable");
+
+  const update = await call("PUT", `/api/staff/${staffId}`, { token: adminToken, body: { name: "Front Desk Two" } });
+  assert.equal(update.status, 200);
+
+  const removed = await call("DELETE", `/api/staff/${staffId}`, { token: adminToken });
+  assert.equal(removed.status, 200);
+
+  const gone = await call("POST", "/api/auth/login", {
+    body: { phone: "9555000002", password: "desk-password-1" },
+  });
+  assert.equal(gone.status, 401, "a removed staff account cannot log in");
+});
+
+test("a second admin can be created and then demoted while an admin remains", async () => {
+  const second = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Owner Two", phone: "9555000005", password: "owner-two-pass", role: "ADMIN" },
+  });
+  assert.equal(second.status, 201);
+  const secondId = second.data.staff.id;
+
+  // with two admins the demotion is allowed
+  const demote = await call("PUT", `/api/staff/${secondId}`, { token: adminToken, body: { role: "STAFF" } });
+  assert.equal(demote.status, 200, "demoting is fine while another admin exists");
+
+  // the same rule now blocks demoting the last one again
+  const removeSecond = await call("DELETE", `/api/staff/${secondId}`, { token: adminToken });
+  assert.equal(removeSecond.status, 200);
 });
 
 /* ------------------------------------------------------ change password ---- */

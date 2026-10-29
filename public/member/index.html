@@ -61,7 +61,7 @@ h2{font-size:18px;font-weight:600;margin-bottom:12px}
 <div style="text-align:center;padding:40px 0 24px"><div style="font-size:48px">🏋️</div><h1 style="margin-top:8px">RAWfit</h1><p class="text-muted">Member Login</p></div>
 <div class="card">
 <div><label class="label">Phone Number</label><input class="input" id="loginPhone" type="tel" placeholder="Enter phone number"></div>
-<div><label class="label">Full Name</label><input class="input" id="loginName" type="text" placeholder="Enter full name"></div>
+<div><label class="label">Password</label><input class="input" id="loginName" type="password" placeholder="Enter your password" autocomplete="current-password"></div>
 <div id="loginError" class="hidden" style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;font-size:14px;margin-bottom:12px"></div>
 <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
 </div>
@@ -108,6 +108,14 @@ h2{font-size:18px;font-weight:600;margin-bottom:12px}
 <div id="page-profile" class="container page hidden">
 <div style="padding:16px 0;display:flex;align-items:center;gap:8px"><span style="cursor:pointer;font-size:20px" onclick="showPage('dashboard')">←</span><h1>My Profile</h1></div>
 <div class="card" id="profileInfo"></div>
+<div class="card" style="margin-top:12px">
+<h2>Change Password</h2>
+<div><label class="label">Current Password</label><input class="input" id="pwCurrent" type="password" autocomplete="current-password"></div>
+<div><label class="label">New Password</label><input class="input" id="pwNew" type="password" autocomplete="new-password"></div>
+<div><label class="label">Confirm New Password</label><input class="input" id="pwConfirm" type="password" autocomplete="new-password"></div>
+<div id="pwError" class="hidden" style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;font-size:14px;margin-bottom:12px"></div>
+<button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+</div>
 <button class="btn btn-primary" style="margin-top:12px" onclick="doLogout()">Logout</button>
 </div>
 <div class="tab-bar">
@@ -213,15 +221,15 @@ function endSession() {
 
 async function doLogin() {
   const phone = document.getElementById('loginPhone').value.trim();
-  const name = document.getElementById('loginName').value.trim();
+  const password = document.getElementById('loginName').value;
   const errEl = document.getElementById('loginError');
-  if (!phone || !name) { errEl.textContent = 'Please fill all fields'; errEl.classList.remove('hidden'); return; }
+  if (!phone || !password) { errEl.textContent = 'Please fill all fields'; errEl.classList.remove('hidden'); return; }
   errEl.classList.add('hidden');
   try {
     const res = await fetch(API + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: phone, name: name }),
+      body: JSON.stringify({ phone: phone, password: password }),
     });
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok || data.error) {
@@ -528,6 +536,39 @@ async function loadAttendance() {
   }
 }
 
+/* Members are given a generated password at the desk, so they must be able to
+   replace it themselves. A wrong current password returns 400, not 401, so a
+   typo does not end the session. */
+async function changePassword() {
+  const current = document.getElementById('pwCurrent').value;
+  const next = document.getElementById('pwNew').value;
+  const again = document.getElementById('pwConfirm').value;
+  const errEl = document.getElementById('pwError');
+  const fail = function (msg) { errEl.textContent = msg; errEl.classList.remove('hidden'); };
+
+  if (!current || !next) return fail('Fill in both password fields');
+  if (next.length < 6) return fail('New password must be at least 6 characters');
+  if (next !== again) return fail('The two new passwords do not match');
+  errEl.classList.add('hidden');
+
+  try {
+    await api('/api/auth/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: next }),
+    });
+    document.getElementById('pwCurrent').value = '';
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwConfirm').value = '';
+    errEl.textContent = 'Password updated.';
+    errEl.style.background = '#ecfdf5';
+    errEl.style.color = '#065f46';
+    errEl.classList.remove('hidden');
+  } catch (e) {
+    errEl.style.background = '#fee2e2';
+    errEl.style.color = '#991b1b';
+    fail(e.message || 'Could not update the password');
+  }
+}
 async function loadProfile() {
   try {
     const data = await api('/api/members/' + user.id);

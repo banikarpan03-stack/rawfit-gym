@@ -6,8 +6,9 @@
  * --------------
  * Every /api route requires a bearer token except POST /api/auth/login. Route-specific
  * guards are declared next to each route:
- *   requireAdmin             — ADMIN role only (all mutations and admin reads)
- *   requireSelf("memberId")  — the token's own id, or an admin
+ *   requireAdmin             — ADMIN only: staff management, deletion, curation
+ *   requireStaff             — ADMIN or STAFF: admissions, check-ins, member edits
+ *   requireSelf("memberId")  — the token's own id, or staff
  *
  * Errors
  * ------
@@ -283,6 +284,19 @@ function requireAdmin(req, res, next) {
   return res.status(403).json({ error: "Admin access required" });
 }
 
+/**
+ * ADMIN or STAFF: the day-to-day running of the gym — admitting members, marking
+ * attendance, editing member records, recording payments. Curation (packages,
+ * exercises, foods, templates), staff management and member deletion stay
+ * admin-only, so a front-desk login can do its job without being able to erase
+ * members or rewrite the exercise library.
+ */
+function requireStaff(req, res, next) {
+  const role = req.user && req.user.role;
+  if (role === "ADMIN" || role === "STAFF") return next();
+  return res.status(403).json({ error: "Staff access required" });
+}
+
 // Checks path params, query string and body — check-in/checkout carry memberId in the
 // body rather than the URL, and a body-blind check would have locked members out.
 // A missing id is a 400 (bad request); a present id that isn't yours is a 403.
@@ -292,7 +306,8 @@ function requireSelf(param) {
       || (req.query && req.query[param])
       || (req.body && req.body[param]);
     if (!target) return res.status(400).json({ error: `${param} is required` });
-    if (req.user.role === "ADMIN" || req.user.userId === target) return next();
+    const role = req.user.role;
+    if (role === "ADMIN" || role === "STAFF" || req.user.userId === target) return next();
     return res.status(403).json({ error: "You may only access your own records" });
   };
 }
@@ -389,8 +404,10 @@ app.post("/api/auth/login", loginIpLimiter, loginLimiter, async (req, res) => {
   try {
     const body = req.body || {};
     const phone = asPhone(body.phone || "");
-    const secret = String(body.name || "").trim();
-    if (!secret) throw badRequest("Password or name is required");
+    // `password` is the current field name; `name` is accepted for older clients
+    // (the admin panel used to send the password under that key).
+    const secret = String(body.password || body.name || "").trim();
+    if (!secret) throw badRequest("Phone and password are required");
 
     const user = await dbGet(
       "SELECT id, uniqueCode, name, phone, password, role FROM users WHERE phone = ?", [phone]
@@ -399,10 +416,14 @@ app.post("/api/auth/login", loginIpLimiter, loginLimiter, async (req, res) => {
     const invalid = new ApiError(401, "Invalid phone or password");
     if (!user) throw invalid;
 
-    if (user.role === "ADMIN") {
-      if (!(await bcrypt.compare(secret, user.password))) throw invalid;
-    } else if (user.name.trim().toLowerCase() !== secret.toLowerCase()) {
-      throw invalid;
+    // Everyone is verified against their stored hash. Members used to be matched on
+    // their own name, so their "secret" was the one fact anyone who knew them had.
+    if (!(await bcrypt.compare(secret, user.password))) throw invalid;
+    // A member whose password is their phone number has no second factor at all —
+    // the phone is the username. Legacy rows were seeded as hash(phone); refuse them
+    // rather than let a known value stand in for a secret.
+    if (user.role === "MEMBER" && secret === user.phone) {
+      throw new ApiError(403, "Set a password first — ask the front desk to reset it");
     }
 
     const token = await signToken(user);
@@ -440,12 +461,156 @@ app.post("/api/auth/password", async (req, res) => {
   }
 });
 
+/* ------------------------------------------------------------------ *
+ * Staff accounts
+ *
+ * Members are people who train here; STAFF are people who run the place. Staff
+ * live in the same users table (role distinguishes them) so a single login flow
+ * serves everyone, but every mutation below guards against the two ways an
+ * installation can lock itself out: removing the last admin, and an admin
+ * removing their own account.
+ * ------------------------------------------------------------------ */
+
+const STAFF_ROLES = new Set(["ADMIN", "STAFF"]);
+
+const STAFF_SELECT =
+  "SELECT id, uniqueCode, name, phone, role, createdAt FROM users WHERE role IN ('ADMIN', 'STAFF')";
+
+app.get("/api/staff", requireAdmin, async (req, res) => {
+  try {
+    const staff = await dbAll(`${STAFF_SELECT} ORDER BY createdAt ASC`);
+    res.json({ staff });
+  } catch (err) {
+    handleError(res, err, "Could not load staff");
+  }
+});
+
+app.post("/api/staff", requireAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    requireFields(body, ["name", "phone", "password"]);
+
+    const name = String(body.name).trim();
+    if (name.length < 2) throw badRequest("Name is too short");
+
+    const phone = asPhone(body.phone);
+    const password = String(body.password);
+    if (password.length < 6) throw badRequest("Password must be at least 6 characters");
+    if (password === phone) throw badRequest("The password cannot be the phone number");
+
+    const role = String(body.role || "STAFF").toUpperCase();
+    if (!STAFF_ROLES.has(role)) throw badRequest("role must be ADMIN or STAFF");
+
+    const clash = await dbGet("SELECT id FROM users WHERE phone = ?", [phone]);
+    if (clash) throw new ApiError(409, "That phone number is already in use");
+
+    const id = uuidv4();
+    const uniqueCode = await generateUniqueCode();
+    await dbRun(
+      `INSERT INTO users (id, uniqueCode, name, phone, password, role, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, uniqueCode, name, phone, await bcrypt.hash(password, 10), role, nowIso(), nowIso()]
+    );
+
+    res.status(201).json({
+      message: "Staff account created",
+      staff: { id, uniqueCode, name, phone, role },
+    });
+  } catch (err) {
+    handleError(res, err, "Could not create staff account");
+  }
+});
+
+/** How many admins remain — used to refuse the change that would leave none. */
+async function countAdmins() {
+  const row = await dbGet("SELECT COUNT(*) AS n FROM users WHERE role = 'ADMIN'");
+  return Number(row && row.n) || 0;
+}
+
+app.put("/api/staff/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const body = req.body || {};
+
+    const target = await dbGet("SELECT id, role, phone FROM users WHERE id = ?", [id]);
+    if (!target) throw notFound("Staff account not found");
+    if (!STAFF_ROLES.has(String(target.role))) throw badRequest("That account is not a staff account");
+
+    const sets = [];
+    const params = [];
+
+    if (body.name !== undefined && body.name !== null && body.name !== "") {
+      const name = String(body.name).trim();
+      if (name.length < 2) throw badRequest("Name is too short");
+      sets.push("name = ?");
+      params.push(name);
+    }
+
+    if (body.phone !== undefined && body.phone !== null && body.phone !== "") {
+      const phone = asPhone(body.phone);
+      const clash = await dbGet("SELECT id FROM users WHERE phone = ? AND id <> ?", [phone, id]);
+      if (clash) throw new ApiError(409, "That phone number is already in use");
+      sets.push("phone = ?");
+      params.push(phone);
+    }
+
+    if (body.password !== undefined && body.password !== null && body.password !== "") {
+      const password = String(body.password);
+      if (password.length < 6) throw badRequest("Password must be at least 6 characters");
+      // Compare against the phone this account will have after the update.
+      const candidatePhone = body.phone ? String(body.phone).trim() : String(target.phone || "");
+      if (password === candidatePhone) {
+        throw badRequest("The password cannot be the account's own phone number");
+      }
+      sets.push("password = ?");
+      params.push(await bcrypt.hash(password, 10));
+    }
+
+    if (body.role !== undefined && body.role !== null && body.role !== "") {
+      const role = String(body.role).toUpperCase();
+      if (!STAFF_ROLES.has(role)) throw badRequest("role must be ADMIN or STAFF");
+      if (target.role === "ADMIN" && role !== "ADMIN" && (await countAdmins()) <= 1) {
+        throw badRequest("There must always be at least one admin");
+      }
+      sets.push("role = ?");
+      params.push(role);
+    }
+
+    if (!sets.length) throw badRequest("Nothing to update");
+    sets.push("updatedAt = ?");
+    params.push(nowIso(), id);
+
+    await dbRun(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`, params);
+    res.json({ message: "Staff account updated" });
+  } catch (err) {
+    handleError(res, err, "Could not update staff account");
+  }
+});
+
+app.delete("/api/staff/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const target = await dbGet("SELECT id, role FROM users WHERE id = ?", [id]);
+    if (!target) throw notFound("Staff account not found");
+    if (!STAFF_ROLES.has(String(target.role))) throw badRequest("That account is not a staff account");
+    if (target.id === req.user.userId) throw badRequest("You cannot remove your own account");
+    if (target.role === "ADMIN" && (await countAdmins()) <= 1) {
+      throw badRequest("There must always be at least one admin");
+    }
+
+    await dbRun("DELETE FROM users WHERE id = ?", [id]);
+    res.json({ message: "Staff account removed" });
+  } catch (err) {
+    handleError(res, err, "Could not remove staff account");
+  }
+});
+
 /**
  * Register a new member — admin only, because members are admitted by staff.
  * Writes the user and the matching payment row together so revenue reporting agrees
  * with admissions instead of running two independent ledgers.
  */
-app.post("/api/auth/register", requireAdmin, async (req, res) => {
+app.post("/api/auth/register", requireStaff, async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name", "phone", "packageId", "startDate"]);
@@ -470,6 +635,20 @@ app.post("/api/auth/register", requireAdmin, async (req, res) => {
     const existing = await dbGet("SELECT id FROM users WHERE phone = ?", [phone]);
     if (existing) throw new ApiError(409, "A member with that phone number already exists");
 
+    // Members sign in with a real password. Use the supplied one, or generate a
+    // readable one and return it exactly once so the front desk can hand it over.
+    const supplied = body.password === undefined || body.password === null || body.password === ""
+      ? null : String(body.password);
+    if (supplied !== null && supplied.length < 6) {
+      throw badRequest("Member password must be at least 6 characters");
+    }
+    // The phone is the username, so it cannot also be the password.
+    if (supplied !== null && supplied === phone) {
+      throw badRequest("The password cannot be the phone number");
+    }
+    const generatedPassword = supplied === null ? generateReadablePassword() : null;
+    const effectivePassword = supplied || generatedPassword;
+
     const id = uuidv4();
     const uniqueCode = await generateUniqueCode();
 
@@ -479,7 +658,7 @@ app.post("/api/auth/register", requireAdmin, async (req, res) => {
          totalAmount, createdAt, updatedAt)
        VALUES (?, ?, ?, ?, ?, 'MEMBER', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        id, uniqueCode, name, phone, await bcrypt.hash(phone, 10),
+        id, uniqueCode, name, phone, await bcrypt.hash(effectivePassword, 10),
         body.dob ? asDate(body.dob, "dob").toISOString() : null,
         body.address ? String(body.address).slice(0, 500) : null,
         body.email ? String(body.email).slice(0, 200) : null,
@@ -504,6 +683,8 @@ app.post("/api/auth/register", requireAdmin, async (req, res) => {
       member: {
         id, uniqueCode, name, phone, totalAmount,
         startDate: start.toISOString(), endDate: end.toISOString(),
+        // Present only when we generated it: shown once, never retrievable again.
+        ...(generatedPassword ? { generatedPassword } : {}),
       },
     });
   } catch (err) {
@@ -515,7 +696,7 @@ app.post("/api/auth/register", requireAdmin, async (req, res) => {
  * Dashboard
  * ------------------------------------------------------------------ */
 
-app.get("/api/dashboard", requireAdmin, async (req, res) => {
+app.get("/api/dashboard", requireStaff, async (req, res) => {
   try {
     const today = todayGym();
     const day = gymDayBounds(today);
@@ -587,7 +768,7 @@ const MEMBER_UPDATABLE = new Set([
   "packageId", "role",
 ]);
 
-app.get("/api/members", requireAdmin, async (req, res) => {
+app.get("/api/members", requireStaff, async (req, res) => {
   try {
     const q = String((req.query && req.query.q) || "").trim();
     let query = `${MEMBER_SELECT} WHERE u.role = 'MEMBER'`;
@@ -622,7 +803,7 @@ app.get("/api/members/:id", requireSelf("id"), async (req, res) => {
   }
 });
 
-app.put("/api/members/:id", requireAdmin, async (req, res) => {
+app.put("/api/members/:id", requireStaff, async (req, res) => {
   try {
     const body = req.body || {};
     const keys = Object.keys(body);
@@ -732,7 +913,7 @@ app.delete("/api/members/:id", requireAdmin, async (req, res) => {
  * Packages
  * ------------------------------------------------------------------ */
 
-app.get("/api/packages", requireAdmin, async (req, res) => {
+app.get("/api/packages", requireStaff, async (req, res) => {
   try {
     const packages = await dbAll(
       "SELECT id, name, duration, price, description, isActive, createdAt FROM packages WHERE isActive = 1 ORDER BY price ASC"
@@ -826,7 +1007,7 @@ app.delete("/api/packages", requireAdmin, async (req, res) => {
  * Attendance
  * ------------------------------------------------------------------ */
 
-app.get("/api/attendance", requireAdmin, async (req, res) => {
+app.get("/api/attendance", requireStaff, async (req, res) => {
   try {
     const day = gymDayBounds();
     const attendance = await dbAll(
@@ -1190,7 +1371,7 @@ app.get("/api/charts/member/:memberId", requireSelf("memberId"), async (req, res
   }
 });
 
-app.post("/api/charts", requireAdmin, async (req, res) => {
+app.post("/api/charts", requireStaff, async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["memberId", "type", "content"]);
@@ -1220,7 +1401,7 @@ app.post("/api/charts", requireAdmin, async (req, res) => {
   }
 });
 
-app.put("/api/charts/:id", requireAdmin, async (req, res) => {
+app.put("/api/charts/:id", requireStaff, async (req, res) => {
   try {
     const body = req.body || {};
     const existing = await dbGet("SELECT id, content, endDate FROM member_charts WHERE id = ?", [req.params.id]);
@@ -1246,7 +1427,7 @@ app.put("/api/charts/:id", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/charts/:id", requireAdmin, async (req, res) => {
+app.delete("/api/charts/:id", requireStaff, async (req, res) => {
   try {
     const result = await dbRun("DELETE FROM member_charts WHERE id = ?", [req.params.id]);
     if (!affected(result)) throw notFound("Chart not found");
@@ -1281,7 +1462,7 @@ app.get("/api/notifications", async (req, res) => {
   }
 });
 
-app.post("/api/notifications", requireAdmin, async (req, res) => {
+app.post("/api/notifications", requireStaff, async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["memberId", "message"]);
@@ -1318,7 +1499,7 @@ app.put("/api/notifications/read", async (req, res) => {
  * Payments
  * ------------------------------------------------------------------ */
 
-app.get("/api/payments", requireAdmin, async (req, res) => {
+app.get("/api/payments", requireStaff, async (req, res) => {
   try {
     const limit = Math.min(Number((req.query && req.query.limit) || 100), 500);
     const offset = Math.max(Number((req.query && req.query.offset) || 0), 0);
@@ -1339,7 +1520,7 @@ app.get("/api/payments", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/api/payments", requireAdmin, async (req, res) => {
+app.post("/api/payments", requireStaff, async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["memberId", "amount"]);
@@ -1506,6 +1687,18 @@ function calcDistance(lat1, lon1, lat2, lon2) {
  * few hundred members. Each attempt is checked against the UNIQUE index and retried,
  * with a crypto-random suffix as the final fallback. (Math.random is no longer used.)
  */
+/**
+ * A short human-transcribable password: read off a printed slip at the front desk.
+ * Excludes 0/O, 1/l/I and similar so it cannot be misread.
+ */
+function generateReadablePassword(len = 8) {
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.randomBytes(len);
+  let out = "";
+  for (let i = 0; i < len; i += 1) out += alphabet[bytes[i] % alphabet.length];
+  return out;
+}
+
 async function generateUniqueCode() {
   const year = new Date().getFullYear();
   for (let attempt = 0; attempt < 25; attempt += 1) {
