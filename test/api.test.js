@@ -398,3 +398,51 @@ test("deleting a member removes their dependent rows too", async () => {
   const gone = await call("GET", `/api/members/${otherMemberId}`, { token: adminToken });
   assert.equal(gone.status, 404);
 });
+
+/* ------------------------------------------------------ change password ---- */
+
+test("password change rejects a wrong current password, then rotates and restores", async () => {
+  // 400 rather than 401 on purpose: the admin UI force-logs-out on any 401, so a
+  // mistyped current password must not look like an expired session.
+  const wrong = await call("POST", "/api/auth/password", {
+    token: adminToken,
+    body: { currentPassword: "not-the-password", newPassword: "brand-new-secret" },
+  });
+  assert.equal(wrong.status, 400, `expected 400, got ${wrong.status}`);
+
+  const tooShort = await call("POST", "/api/auth/password", {
+    token: adminToken,
+    body: { currentPassword: "admin", newPassword: "short" },
+  });
+  assert.equal(tooShort.status, 400);
+
+  const missing = await call("POST", "/api/auth/password", { token: adminToken, body: {} });
+  assert.equal(missing.status, 400);
+
+  const ok = await call("POST", "/api/auth/password", {
+    token: adminToken,
+    body: { currentPassword: "admin", newPassword: "brand-new-secret" },
+  });
+  assert.equal(ok.status, 200);
+
+  const withNew = await call("POST", "/api/auth/login", {
+    body: { phone: "9999999999", name: "brand-new-secret" },
+  });
+  assert.equal(withNew.status, 200, "should log in with the new password");
+
+  const withOld = await call("POST", "/api/auth/login", {
+    body: { phone: "9999999999", name: "admin" },
+  });
+  assert.equal(withOld.status, 401, "old password must stop working");
+
+  // No restore step: every run boots a fresh temp database, so the seed recreates
+  // the default admin. It could not be restored through the API regardless — the
+  // seeded default is 5 characters while the policy demands 6, which is exactly
+  // the inconsistency that shipped the weakest password in the app.
+  const tooShortToRestore = await call("POST", "/api/auth/password", {
+    token: withNew.data.token,
+    body: { currentPassword: "brand-new-secret", newPassword: "admin" },
+  });
+  assert.equal(tooShortToRestore.status, 400,
+    "the 5-character default cannot be set back, proving the 6-character floor applies");
+});

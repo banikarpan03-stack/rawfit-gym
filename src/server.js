@@ -423,7 +423,9 @@ app.post("/api/auth/password", async (req, res) => {
     const user = await dbGet("SELECT id, password FROM users WHERE id = ?", [req.user.userId]);
     if (!user) throw notFound("User not found");
     if (!(await bcrypt.compare(String(currentPassword), user.password))) {
-      throw new ApiError(401, "Current password is incorrect");
+      // 400, not 401: the admin UI treats any 401 as an expired session and
+      // logs the user out, so a mistyped current password would eject them.
+      throw new ApiError(400, "Current password is incorrect");
     }
 
     await dbRun("UPDATE users SET password = ?, updatedAt = ? WHERE id = ?", [
