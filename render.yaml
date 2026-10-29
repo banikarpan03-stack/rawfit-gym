@@ -1,3 +1,17 @@
+# Render blueprint for the rawfit-gym web service.
+#
+# NOTE: the live service was created by hand in the Render dashboard, not from
+# this file, so nothing here is applied automatically. It records the intended
+# shape of the service; the authoritative configuration lives in the dashboard.
+# Editing a value here has no effect until the service is converted to a
+# Blueprint-managed service.
+#
+# Environment variables are managed in the dashboard, as secrets:
+#   DATABASE_URL  Postgres connection string (the production database)
+#   JWT_SECRET    token signing key
+#   NODE_ENV      production
+# None of them belong in this file -- it is committed to a public repository,
+# which is exactly how an earlier commit leaked a live database password.
 services:
   - type: web
     name: rawfit-gym
