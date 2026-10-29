@@ -107,12 +107,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS stays open unless an explicit allow-list is configured — lock it down by
-// setting CORS_ORIGINS=https://your-domain.example in production.
+// Deny cross-origin by default in production. Both frontends are served from this
+// same origin and call the API with a relative base (API = ""), so nothing
+// legitimate ever needs a CORS grant; reflecting arbitrary origins only widened
+// the surface. An explicit CORS_ORIGINS allow-list opts specific origins back in,
+// and development stays permissive for convenience.
 const allowedOrigins = (process.env.CORS_ORIGINS || "")
   .split(",").map((s) => s.trim()).filter(Boolean);
 app.use(cors({
-  origin: IS_PROD && allowedOrigins.length ? allowedOrigins : true,
+  origin: IS_PROD ? (allowedOrigins.length ? allowedOrigins : false) : true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   maxAge: 600,
