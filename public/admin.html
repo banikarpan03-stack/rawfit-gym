@@ -863,29 +863,29 @@ tr:hover td { background: rgba(0,0,0,0.02); }
       <div class="sidebar-menu-item" data-page="attendance" onclick="navigateTo('attendance')">
         <span class="icon">📋</span> Attendance
       </div>
-      <div class="sidebar-menu-section" data-admin-only>Templates</div>
-      <div class="sidebar-menu-item" data-admin-only data-page="dietTemplates" onclick="navigateTo('dietTemplates')">
+      <div class="sidebar-menu-section" data-roles="ADMIN,TRAINER">Templates</div>
+      <div class="sidebar-menu-item" data-page="dietTemplates" onclick="navigateTo('dietTemplates')">
         <span class="icon">🥗</span> Diet Templates
       </div>
-      <div class="sidebar-menu-item" data-admin-only data-page="workoutTemplates" onclick="navigateTo('workoutTemplates')">
+      <div class="sidebar-menu-item" data-page="workoutTemplates" onclick="navigateTo('workoutTemplates')">
         <span class="icon">💪</span> Workout Templates
       </div>
-      <div class="sidebar-menu-section">Assignment</div>
+      <div class="sidebar-menu-section" data-roles="ADMIN,TRAINER">Assignment</div>
       <div class="sidebar-menu-item" data-page="charts" onclick="navigateTo('charts')">
         <span class="icon">📝</span> Chart Assignment
       </div>
-      <div class="sidebar-menu-section" data-admin-only>Library</div>
-      <div class="sidebar-menu-item" data-admin-only data-page="packages" onclick="navigateTo('packages')">
+      <div class="sidebar-menu-section" data-roles="ADMIN">Library</div>
+      <div class="sidebar-menu-item" data-page="packages" onclick="navigateTo('packages')">
         <span class="icon">📦</span> Packages
       </div>
-      <div class="sidebar-menu-item" data-admin-only data-page="exercises" onclick="navigateTo('exercises')">
+      <div class="sidebar-menu-item" data-page="exercises" onclick="navigateTo('exercises')">
         <span class="icon">🏋️</span> Exercise Library
       </div>
-      <div class="sidebar-menu-item" data-admin-only data-page="foodDatabase" onclick="navigateTo('foodDatabase')">
+      <div class="sidebar-menu-item" data-page="foodDatabase" onclick="navigateTo('foodDatabase')">
         <span class="icon">🍛</span> Food Database
       </div>
-      <div class="sidebar-menu-section" data-admin-only>Team</div>
-      <div class="sidebar-menu-item" data-admin-only data-page="staff" onclick="navigateTo('staff')">
+      <div class="sidebar-menu-section" data-roles="ADMIN">Team</div>
+      <div class="sidebar-menu-item" data-page="staff" onclick="navigateTo('staff')">
         <span class="icon">&#129489;&#8205;&#128188;</span> Staff
       </div>
       <div class="sidebar-menu-section"></div>
@@ -1224,7 +1224,8 @@ tr:hover td { background: rgba(0,0,0,0.02); }
       <div class="form-group">
         <label>Role</label>
         <select id="staffRole">
-          <option value="STAFF">Staff</option>
+          <option value="RECEPTION">Reception</option>
+          <option value="TRAINER">Trainer</option>
           <option value="ADMIN">Admin</option>
         </select>
       </div>
@@ -1841,12 +1842,23 @@ async function savePassword() {
 
 /* ---------------------------------------------------------------- staff ----- */
 
-/** Hide admin-only navigation from staff, and move them off a page they cannot use. */
+/** Hide what this role may not use, and move them off a page they cannot open. */
 function applyRolePermissions() {
-  document.querySelectorAll('[data-admin-only]').forEach(function (el) {
-    el.classList.toggle('hidden', !isAdmin());
+  const role = roleOf();
+  // Nav links are driven by PAGE_ROLES through data-page, so there is exactly one place
+  // that decides who may open what. Anything not listed there (Logout) stays visible.
+  // Deriving rather than hand-labelling matters: an item that merely lacked a role
+  // attribute stays visible to everybody, which is how a trainer was shown a "New
+  // Admission" link they could not use.
+  document.querySelectorAll('.sidebar-menu-item[data-page]').forEach(function (el) {
+    el.classList.toggle('hidden', !canOpen(el.getAttribute('data-page')));
   });
-  if (!isAdmin() && ADMIN_PAGES.indexOf(state.currentPage) !== -1) navigateTo('dashboard');
+  // Section headings own no page, so they carry an explicit role list.
+  document.querySelectorAll('.sidebar-menu-section[data-roles]').forEach(function (el) {
+    const roles = (el.getAttribute('data-roles') || '').split(',');
+    el.classList.toggle('hidden', roles.indexOf(role) === -1);
+  });
+  if (!canOpen(state.currentPage)) navigateTo('dashboard');
 }
 
 async function loadStaff() {
@@ -1874,7 +1886,7 @@ function openStaffModal(id, name, phone, role) {
   document.getElementById('staffId').value = id || '';
   document.getElementById('staffName').value = name || '';
   document.getElementById('staffPhone').value = phone || '';
-  document.getElementById('staffRole').value = role || 'STAFF';
+  document.getElementById('staffRole').value = role || 'RECEPTION';
   document.getElementById('staffPassword').value = '';
   document.getElementById('staffPwHint').textContent = id
     ? '(leave blank to keep the current one)' : '(at least 6 characters)';
@@ -1995,17 +2007,36 @@ function logoutOnExpiry() {
 }
 
 // NAVIGATION
-// Pages whose API endpoints are admin-only. Hiding the nav link is a courtesy;
-// navigateTo() is callable from the console, so the refusal has to live here.
-const ADMIN_PAGES = ['packages', 'exercises', 'foodDatabase', 'dietTemplates', 'workoutTemplates', 'staff'];
+// Which roles may open which page. Mirrors the server's capability table. Hiding the nav
+// link is a courtesy; navigateTo() is callable from the console, so the refusal lives
+// here too — and the server still has the final say, since the page cannot load without
+// its endpoints answering.
+const PAGE_ROLES = {
+  dashboard:        ['ADMIN', 'TRAINER', 'RECEPTION'],
+  members:          ['ADMIN', 'TRAINER', 'RECEPTION'],
+  attendance:       ['ADMIN', 'TRAINER', 'RECEPTION'],
+  admission:        ['ADMIN', 'RECEPTION'],
+  charts:           ['ADMIN', 'TRAINER'],
+  dietTemplates:    ['ADMIN', 'TRAINER'],
+  workoutTemplates: ['ADMIN', 'TRAINER'],
+  packages:         ['ADMIN'],
+  exercises:        ['ADMIN'],
+  foodDatabase:     ['ADMIN'],
+  staff:            ['ADMIN'],
+};
 
-function isAdmin() {
-  return !!(state.user && state.user.role === 'ADMIN');
+function roleOf() {
+  return (state.user && state.user.role) || '';
+}
+
+function canOpen(page) {
+  const roles = PAGE_ROLES[page];
+  return !roles || roles.indexOf(roleOf()) !== -1;
 }
 
 function navigateTo(page) {
-  if (ADMIN_PAGES.indexOf(page) !== -1 && !isAdmin()) {
-    showToast('Admins only', 'error');
+  if (!canOpen(page)) {
+    showToast('Your role does not allow that', 'error');
     if (page !== 'dashboard') return navigateTo('dashboard');
     return;
   }
@@ -2042,6 +2073,22 @@ function toggleSidebar(force) {
 }
 
 // DASHBOARD
+/**
+ * The revenue figures are the owner's business, so the server withholds them from every
+ * other role rather than sending them for the UI to hide. Rendering only what arrives
+ * keeps "no card" from looking like "zero".
+ *
+ * Returned rather than interpolated by the caller: the frontend gate requires every
+ * in-template interpolation to be a literal esc(...) call, which a helper returning
+ * already-escaped markup cannot express. The values below are esc()'d individually.
+ */
+function revenueCards(s) {
+  if (!('monthlyRevenue' in s) && !('totalRevenue' in s)) return '';
+  return `
+      <div class="stat-card"><h3>Revenue This Month</h3><div class="value">₹${esc((s.monthlyRevenue || 0).toLocaleString())}</div></div>
+      <div class="stat-card"><h3>Total Revenue (All Time)</h3><div class="value">₹${esc((s.totalRevenue || 0).toLocaleString())}</div></div>`;
+}
+
 async function loadDashboard() {
   try {
     const data = await apiCall('GET', '/api/dashboard');
@@ -2050,9 +2097,7 @@ async function loadDashboard() {
       <div class="stat-card"><h3>Total Members</h3><div class="value">${esc(s.totalMembers || 0)}</div></div>
       <div class="stat-card"><h3>Active Members</h3><div class="value">${esc(s.activeMembers || 0)}</div></div>
       <div class="stat-card"><h3>Today's Attendance</h3><div class="value">${esc(s.todayAttendance || 0)}</div></div>
-      <div class="stat-card"><h3>Revenue This Month</h3><div class="value">₹${esc((s.monthlyRevenue || 0).toLocaleString())}</div></div>
-      <div class="stat-card"><h3>Total Revenue (All Time)</h3><div class="value">₹${esc((s.totalRevenue || 0).toLocaleString())}</div></div>
-    `;
+    ` + revenueCards(s);
     const rm = data.recentMembers || [];
     document.getElementById('recentMembersTable').innerHTML = rm.length ? rm.map(m =>
       `<tr><td>${esc(m.name)}</td><td>${esc(m.phone)}</td><td>${esc(m.packageName || '-')}</td><td>${esc(fmtDate(m.startDate))}</td></tr>`

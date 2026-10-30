@@ -473,6 +473,21 @@ const SQLITE_UPGRADES = [
   { column: "gender", ddl: "ALTER TABLE users ADD COLUMN gender TEXT" },
 ];
 
+/**
+ * Data migrations that are not schema changes. Idempotent, so they are safe to run on
+ * every boot.
+ */
+async function dataMigrations() {
+  // STAFF was the only non-admin staff role before trainers and reception split out of
+  // it. Reception is the closest equivalent, so an existing front-desk login keeps the
+  // narrow access it already had rather than silently gaining a trainer's powers.
+  try {
+    await dbRun("UPDATE users SET role = 'RECEPTION' WHERE role = 'STAFF'");
+  } catch (err) {
+    console.warn(`[schema] STAFF -> RECEPTION migration skipped: ${err.message}`);
+  }
+}
+
 async function initDatabase() {
   await dbExec(isPostgres ? PG_DDL : SQLITE_DDL);
 
@@ -502,6 +517,7 @@ async function initDatabase() {
         }
       }
     }
+    await dataMigrations();
     return;
   }
 
@@ -517,6 +533,8 @@ async function initDatabase() {
       console.error(`[schema] upgrade skipped (${up.column}): ${err.message}`);
     }
   }
+
+  await dataMigrations();
 }
 
 /* ------------------------------------------------------------------ *

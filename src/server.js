@@ -6,9 +6,8 @@
  * --------------
  * Every /api route requires a bearer token except POST /api/auth/login. Route-specific
  * guards are declared next to each route:
- *   requireAdmin             — ADMIN only: staff management, deletion, curation
- *   requireStaff             — ADMIN or STAFF: admissions, check-ins, member edits
- *   requireSelf("memberId")  — the token's own id, or staff
+ *   allow("<capability>")    — the roles listed for that capability in CAN below
+ *   requireSelf("memberId")  — the token's own id, or any staff role
  *
  * Errors
  * ------
@@ -279,22 +278,62 @@ async function verifyToken(req, res, next) {
   }
 }
 
-function requireAdmin(req, res, next) {
-  if (req.user && req.user.role === "ADMIN") return next();
-  return res.status(403).json({ error: "Admin access required" });
-}
+/**
+ * The three staff roles. MEMBER is the fourth, but members never reach these guards:
+ * they only touch their own records, through requireSelf.
+ */
+const STAFF_ROLES = new Set(["ADMIN", "TRAINER", "RECEPTION"]);
 
 /**
- * ADMIN or STAFF: the day-to-day running of the gym — admitting members, marking
- * attendance, editing member records, recording payments. Curation (packages,
- * exercises, foods, templates), staff management and member deletion stay
- * admin-only, so a front-desk login can do its job without being able to erase
- * members or rewrite the exercise library.
+ * Who may do what, in one table. Declaring it here rather than sprinkling role checks
+ * across thirty routes matters for two reasons: "what can a trainer actually do?" was
+ * previously answerable only by reading every route, and the dashboard ended up showing
+ * the gym's revenue to every staff member because nobody could see the whole picture.
  */
-function requireStaff(req, res, next) {
-  const role = req.user && req.user.role;
-  if (role === "ADMIN" || role === "STAFF") return next();
-  return res.status(403).json({ error: "Staff access required" });
+const CAN = {
+  // Running the gym day to day
+  viewDashboard:  new Set(["ADMIN", "TRAINER", "RECEPTION"]),
+  viewMembers:    new Set(["ADMIN", "TRAINER", "RECEPTION"]),
+  viewAttendance: new Set(["ADMIN", "TRAINER", "RECEPTION"]),
+  notifyMembers:  new Set(["ADMIN", "TRAINER", "RECEPTION"]),
+  viewPackages:   new Set(["ADMIN", "TRAINER", "RECEPTION"]),
+
+  // The front desk: signing people up and keeping their records straight
+  admitMember:    new Set(["ADMIN", "RECEPTION"]),
+  editMember:     new Set(["ADMIN", "RECEPTION"]),
+
+  // Training: prescribing work is the trainer's job, not the desk's
+  assignCharts:   new Set(["ADMIN", "TRAINER"]),
+  viewTemplates:  new Set(["ADMIN", "TRAINER"]),
+
+  // Money. What the gym takes is the owner's business, not the desk's, so the revenue
+  // summary and the payment ledger are admin-only. Recording a payment is a desk task
+  // and exposes nothing, so reception keeps that.
+  seeRevenue:     new Set(["ADMIN"]),
+  viewLedger:     new Set(["ADMIN"]),
+  recordPayment:  new Set(["ADMIN", "RECEPTION"]),
+
+  // Owner-only
+  manageStaff:    new Set(["ADMIN"]),
+  managePackages: new Set(["ADMIN"]),
+  curateLibrary:  new Set(["ADMIN"]),
+  deleteMember:   new Set(["ADMIN"]),
+  adminTools:     new Set(["ADMIN"]),
+};
+
+/** True when this user's role is listed for the capability. */
+function can(user, capability) {
+  const roles = CAN[capability];
+  if (!roles) throw new Error(`Unknown capability: ${capability}`);
+  return !!user && roles.has(String(user.role));
+}
+
+function allow(capability) {
+  if (!CAN[capability]) throw new Error(`Unknown capability: ${capability}`);
+  return (req, res, next) => {
+    if (can(req.user, capability)) return next();
+    return res.status(403).json({ error: "Your role does not allow this" });
+  };
 }
 
 // Checks path params, query string and body — check-in/checkout carry memberId in the
@@ -307,13 +346,13 @@ function requireSelf(param) {
       || (req.body && req.body[param]);
     if (!target) return res.status(400).json({ error: `${param} is required` });
     const role = req.user.role;
-    if (role === "ADMIN" || role === "STAFF" || req.user.userId === target) return next();
+    if (STAFF_ROLES.has(String(role)) || req.user.userId === target) return next();
     return res.status(403).json({ error: "You may only access your own records" });
   };
 }
 
 // Every /api route is authenticated from here on; login opts out explicitly. Individual
-// routes add requireAdmin / requireSelf on top of this.
+// routes add allow() / requireSelf on top of this.
 app.use("/api", (req, res, next) => {
   if (req.method === "POST" && req.path === "/auth/login") return next();
   return verifyToken(req, res, next);
@@ -464,19 +503,17 @@ app.post("/api/auth/password", async (req, res) => {
 /* ------------------------------------------------------------------ *
  * Staff accounts
  *
- * Members are people who train here; STAFF are people who run the place. Staff
+ * Members are people who train here; staff are people who run the place. Staff
  * live in the same users table (role distinguishes them) so a single login flow
  * serves everyone, but every mutation below guards against the two ways an
  * installation can lock itself out: removing the last admin, and an admin
  * removing their own account.
  * ------------------------------------------------------------------ */
 
-const STAFF_ROLES = new Set(["ADMIN", "STAFF"]);
-
 const STAFF_SELECT =
-  "SELECT id, uniqueCode, name, phone, role, createdAt FROM users WHERE role IN ('ADMIN', 'STAFF')";
+  "SELECT id, uniqueCode, name, phone, role, createdAt FROM users WHERE role IN ('ADMIN', 'TRAINER', 'RECEPTION')";
 
-app.get("/api/staff", requireAdmin, async (req, res) => {
+app.get("/api/staff", allow("manageStaff"), async (req, res) => {
   try {
     const staff = await dbAll(`${STAFF_SELECT} ORDER BY createdAt ASC`);
     res.json({ staff });
@@ -485,7 +522,7 @@ app.get("/api/staff", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/api/staff", requireAdmin, async (req, res) => {
+app.post("/api/staff", allow("manageStaff"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name", "phone", "password"]);
@@ -498,8 +535,8 @@ app.post("/api/staff", requireAdmin, async (req, res) => {
     if (password.length < 6) throw badRequest("Password must be at least 6 characters");
     if (password === phone) throw badRequest("The password cannot be the phone number");
 
-    const role = String(body.role || "STAFF").toUpperCase();
-    if (!STAFF_ROLES.has(role)) throw badRequest("role must be ADMIN or STAFF");
+    const role = String(body.role || "RECEPTION").toUpperCase();
+    if (!STAFF_ROLES.has(role)) throw badRequest("role must be ADMIN, TRAINER or RECEPTION");
 
     const clash = await dbGet("SELECT id FROM users WHERE phone = ?", [phone]);
     if (clash) throw new ApiError(409, "That phone number is already in use");
@@ -527,7 +564,7 @@ async function countAdmins() {
   return Number(row && row.n) || 0;
 }
 
-app.put("/api/staff/:id", requireAdmin, async (req, res) => {
+app.put("/api/staff/:id", allow("manageStaff"), async (req, res) => {
   try {
     const id = req.params.id;
     const body = req.body || {};
@@ -568,7 +605,7 @@ app.put("/api/staff/:id", requireAdmin, async (req, res) => {
 
     if (body.role !== undefined && body.role !== null && body.role !== "") {
       const role = String(body.role).toUpperCase();
-      if (!STAFF_ROLES.has(role)) throw badRequest("role must be ADMIN or STAFF");
+      if (!STAFF_ROLES.has(role)) throw badRequest("role must be ADMIN, TRAINER or RECEPTION");
       if (target.role === "ADMIN" && role !== "ADMIN" && (await countAdmins()) <= 1) {
         throw badRequest("There must always be at least one admin");
       }
@@ -587,7 +624,7 @@ app.put("/api/staff/:id", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/staff/:id", requireAdmin, async (req, res) => {
+app.delete("/api/staff/:id", allow("manageStaff"), async (req, res) => {
   try {
     const id = req.params.id;
     const target = await dbGet("SELECT id, role FROM users WHERE id = ?", [id]);
@@ -610,7 +647,7 @@ app.delete("/api/staff/:id", requireAdmin, async (req, res) => {
  * Writes the user and the matching payment row together so revenue reporting agrees
  * with admissions instead of running two independent ledgers.
  */
-app.post("/api/auth/register", requireStaff, async (req, res) => {
+app.post("/api/auth/register", allow("admitMember"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name", "phone", "packageId", "startDate"]);
@@ -703,7 +740,7 @@ app.post("/api/auth/register", requireStaff, async (req, res) => {
  * Dashboard
  * ------------------------------------------------------------------ */
 
-app.get("/api/dashboard", requireStaff, async (req, res) => {
+app.get("/api/dashboard", allow("viewDashboard"), async (req, res) => {
   try {
     const today = todayGym();
     const day = gymDayBounds(today);
@@ -720,11 +757,18 @@ app.get("/api/dashboard", requireStaff, async (req, res) => {
       `SELECT COUNT(*) as count FROM attendance WHERE ${tsBetween("checkIn")}`,
       [day.start, day.end]
     );
-    const revenueRow = await dbGet("SELECT COALESCE(SUM(amount), 0) as total FROM payments");
-    const monthlyRow = await dbGet(
-      `SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE ${tsBetween("date")}`,
-      [monthStart.start, monthStart.end]
-    );
+    // What the gym takes is the owner's information, so the figures are not merely
+    // hidden in the UI — they are never queried, never put in the response, and so
+    // cannot be read out of the network tab by a trainer or the front desk.
+    let revenueRow = null;
+    let monthlyRow = null;
+    if (can(req.user, "seeRevenue")) {
+      revenueRow = await dbGet("SELECT COALESCE(SUM(amount), 0) as total FROM payments");
+      monthlyRow = await dbGet(
+        `SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE ${tsBetween("date")}`,
+        [monthStart.start, monthStart.end]
+      );
+    }
 
     const recentMembers = await dbAll(
       `SELECT u.id, u.name, u.phone, u.uniqueCode, u.startDate, u.endDate, u.createdAt,
@@ -745,8 +789,10 @@ app.get("/api/dashboard", requireStaff, async (req, res) => {
         totalMembers: Number(totalMembersRow.count) || 0,
         activeMembers: Number(activeRow.count) || 0,
         todayAttendance: Number(attendanceRow.count) || 0,
-        totalRevenue: Number(revenueRow.total) || 0,
-        monthlyRevenue: Number(monthlyRow.total) || 0,
+        // Absent rather than zeroed for other roles: a zero would claim the gym took
+        // no money, which is a different and equally false statement.
+        ...(revenueRow ? { totalRevenue: Number(revenueRow.total) || 0 } : {}),
+        ...(monthlyRow ? { monthlyRevenue: Number(monthlyRow.total) || 0 } : {}),
       },
       recentMembers,
       todayAttendees,
@@ -775,7 +821,7 @@ const MEMBER_UPDATABLE = new Set([
   "packageId", "role",
 ]);
 
-app.get("/api/members", requireStaff, async (req, res) => {
+app.get("/api/members", allow("viewMembers"), async (req, res) => {
   try {
     const q = String((req.query && req.query.q) || "").trim();
     let query = `${MEMBER_SELECT} WHERE u.role = 'MEMBER'`;
@@ -810,7 +856,7 @@ app.get("/api/members/:id", requireSelf("id"), async (req, res) => {
   }
 });
 
-app.put("/api/members/:id", requireStaff, async (req, res) => {
+app.put("/api/members/:id", allow("editMember"), async (req, res) => {
   try {
     const body = req.body || {};
     const keys = Object.keys(body);
@@ -899,7 +945,7 @@ app.put("/api/members/:id", requireStaff, async (req, res) => {
   }
 });
 
-app.delete("/api/members/:id", requireAdmin, async (req, res) => {
+app.delete("/api/members/:id", allow("deleteMember"), async (req, res) => {
   try {
     const member = await dbGet("SELECT id FROM users WHERE id = ?", [req.params.id]);
     if (!member) throw notFound("Member not found");
@@ -920,7 +966,7 @@ app.delete("/api/members/:id", requireAdmin, async (req, res) => {
  * Packages
  * ------------------------------------------------------------------ */
 
-app.get("/api/packages", requireStaff, async (req, res) => {
+app.get("/api/packages", allow("viewPackages"), async (req, res) => {
   try {
     const packages = await dbAll(
       "SELECT id, name, duration, price, description, isActive, createdAt FROM packages WHERE isActive = 1 ORDER BY price ASC"
@@ -943,7 +989,7 @@ function readPackageBody(body) {
   };
 }
 
-app.post("/api/packages", requireAdmin, async (req, res) => {
+app.post("/api/packages", allow("managePackages"), async (req, res) => {
   try {
     const body = req.body || {};
     const fields = readPackageBody(body);
@@ -977,7 +1023,7 @@ app.post("/api/packages", requireAdmin, async (req, res) => {
   }
 });
 
-app.put("/api/packages", requireAdmin, async (req, res) => {
+app.put("/api/packages", allow("managePackages"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["id"]);
@@ -998,7 +1044,7 @@ app.put("/api/packages", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/packages", requireAdmin, async (req, res) => {
+app.delete("/api/packages", allow("managePackages"), async (req, res) => {
   try {
     const id = req.body && req.body.id;
     if (!id) throw badRequest("id is required in the request body");
@@ -1014,7 +1060,7 @@ app.delete("/api/packages", requireAdmin, async (req, res) => {
  * Attendance
  * ------------------------------------------------------------------ */
 
-app.get("/api/attendance", requireStaff, async (req, res) => {
+app.get("/api/attendance", allow("viewAttendance"), async (req, res) => {
   try {
     const day = gymDayBounds();
     const attendance = await dbAll(
@@ -1227,7 +1273,7 @@ app.get("/api/exercises", async (req, res) => {
   }
 });
 
-app.post("/api/exercises", requireAdmin, async (req, res) => {
+app.post("/api/exercises", allow("curateLibrary"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name", "category"]);
@@ -1268,7 +1314,7 @@ app.post("/api/exercises", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/exercises", requireAdmin, async (req, res) => {
+app.delete("/api/exercises", allow("curateLibrary"), async (req, res) => {
   try {
     const id = req.body && req.body.id;
     if (!id) throw badRequest("id is required in the request body");
@@ -1284,7 +1330,7 @@ app.delete("/api/exercises", requireAdmin, async (req, res) => {
  * Templates
  * ------------------------------------------------------------------ */
 
-app.get("/api/templates", requireAdmin, async (req, res) => {
+app.get("/api/templates", allow("viewTemplates"), async (req, res) => {
   try {
     const dietTemplates = await dbAll(
       "SELECT id, name, targetCalories, meals, description, createdAt FROM diet_templates ORDER BY name"
@@ -1298,7 +1344,7 @@ app.get("/api/templates", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/api/templates/diet", requireAdmin, async (req, res) => {
+app.post("/api/templates/diet", allow("curateLibrary"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name"]);
@@ -1319,7 +1365,7 @@ app.post("/api/templates/diet", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/api/templates/workout", requireAdmin, async (req, res) => {
+app.post("/api/templates/workout", allow("curateLibrary"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name"]);
@@ -1344,7 +1390,7 @@ async function deleteTemplate(table, id) {
   if (!affected(result)) throw notFound("Template not found");
 }
 
-app.delete("/api/templates/diet/:id", requireAdmin, async (req, res) => {
+app.delete("/api/templates/diet/:id", allow("curateLibrary"), async (req, res) => {
   try {
     await deleteTemplate("diet_templates", req.params.id);
     res.json({ ok: true });
@@ -1353,7 +1399,7 @@ app.delete("/api/templates/diet/:id", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/templates/workout/:id", requireAdmin, async (req, res) => {
+app.delete("/api/templates/workout/:id", allow("curateLibrary"), async (req, res) => {
   try {
     await deleteTemplate("workout_templates", req.params.id);
     res.json({ ok: true });
@@ -1378,7 +1424,7 @@ app.get("/api/charts/member/:memberId", requireSelf("memberId"), async (req, res
   }
 });
 
-app.post("/api/charts", requireStaff, async (req, res) => {
+app.post("/api/charts", allow("assignCharts"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["memberId", "type", "content"]);
@@ -1408,7 +1454,7 @@ app.post("/api/charts", requireStaff, async (req, res) => {
   }
 });
 
-app.put("/api/charts/:id", requireStaff, async (req, res) => {
+app.put("/api/charts/:id", allow("assignCharts"), async (req, res) => {
   try {
     const body = req.body || {};
     const existing = await dbGet("SELECT id, content, endDate FROM member_charts WHERE id = ?", [req.params.id]);
@@ -1434,7 +1480,7 @@ app.put("/api/charts/:id", requireStaff, async (req, res) => {
   }
 });
 
-app.delete("/api/charts/:id", requireStaff, async (req, res) => {
+app.delete("/api/charts/:id", allow("assignCharts"), async (req, res) => {
   try {
     const result = await dbRun("DELETE FROM member_charts WHERE id = ?", [req.params.id]);
     if (!affected(result)) throw notFound("Chart not found");
@@ -1469,7 +1515,7 @@ app.get("/api/notifications", async (req, res) => {
   }
 });
 
-app.post("/api/notifications", requireStaff, async (req, res) => {
+app.post("/api/notifications", allow("notifyMembers"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["memberId", "message"]);
@@ -1506,7 +1552,7 @@ app.put("/api/notifications/read", async (req, res) => {
  * Payments
  * ------------------------------------------------------------------ */
 
-app.get("/api/payments", requireStaff, async (req, res) => {
+app.get("/api/payments", allow("viewLedger"), async (req, res) => {
   try {
     const limit = Math.min(Number((req.query && req.query.limit) || 100), 500);
     const offset = Math.max(Number((req.query && req.query.offset) || 0), 0);
@@ -1527,7 +1573,7 @@ app.get("/api/payments", requireStaff, async (req, res) => {
   }
 });
 
-app.post("/api/payments", requireStaff, async (req, res) => {
+app.post("/api/payments", allow("recordPayment"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["memberId", "amount"]);
@@ -1571,7 +1617,7 @@ app.get("/api/foods", async (req, res) => {
   }
 });
 
-app.post("/api/foods", requireAdmin, async (req, res) => {
+app.post("/api/foods", allow("curateLibrary"), async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ["name", "category"]);
@@ -1590,7 +1636,7 @@ app.post("/api/foods", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/foods", requireAdmin, async (req, res) => {
+app.delete("/api/foods", allow("curateLibrary"), async (req, res) => {
   try {
     const id = req.body && req.body.id;
     if (!id) throw badRequest("id is required in the request body");
@@ -1612,7 +1658,7 @@ app.get("/ping", (req, res) => {
 
 // Mounted under /api so it sits behind the same auth middleware as everything else —
 // the original /dbcheck was public and reported database internals to anyone.
-app.get("/api/dbcheck", requireAdmin, async (req, res) => {
+app.get("/api/dbcheck", allow("adminTools"), async (req, res) => {
   try {
     const exercises = await dbGet("SELECT COUNT(*) as count FROM exercises");
     const packages = await dbGet("SELECT COUNT(*) as count FROM packages");
@@ -1630,7 +1676,7 @@ app.get("/api/dbcheck", requireAdmin, async (req, res) => {
 });
 
 /** Re-runs every seed block. Idempotent, so it doubles as a repair tool. */
-app.post("/api/admin/reseed", requireAdmin, async (req, res) => {
+app.post("/api/admin/reseed", allow("adminTools"), async (req, res) => {
   try {
     const results = await seedDatabase();
     const exercisesSeeded = await ensureExercisesSeeded();

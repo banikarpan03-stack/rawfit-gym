@@ -27,8 +27,10 @@ let memberToken = null;
 let memberId = null;
 let otherMemberId = null;
 let memberPassword = null;
-let staffToken = null;
-let staffId = null;
+let receptionToken = null;
+let receptionId = null;
+let trainerToken = null;
+let trainerId = null;
 
 async function call(method, pathname, { body, token, raw } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -565,14 +567,14 @@ test("a member cannot reach staff management at all", async () => {
   assert.equal(create.status, 403);
 });
 
-test("staff accounts can be created, log in, and do operational work", async () => {
+test("reception accounts can be created, log in, and run the front desk", async () => {
   const created = await call("POST", "/api/staff", {
     token: adminToken,
-    body: { name: "Front Desk", phone: "9555000002", password: "desk-password-1", role: "STAFF" },
+    body: { name: "Front Desk", phone: "9555000002", password: "desk-password-1", role: "RECEPTION" },
   });
   assert.equal(created.status, 201, JSON.stringify(created.data));
-  staffId = created.data.staff.id;
-  assert.equal(created.data.staff.role, "STAFF");
+  receptionId = created.data.staff.id;
+  assert.equal(created.data.staff.role, "RECEPTION");
 
   const dupe = await call("POST", "/api/staff", {
     token: adminToken,
@@ -596,38 +598,131 @@ test("staff accounts can be created, log in, and do operational work", async () 
     body: { phone: "9555000002", password: "desk-password-1" },
   });
   assert.equal(login.status, 200);
-  staffToken = login.data.token;
-  assert.equal(login.data.user.role, "STAFF");
+  receptionToken = login.data.token;
+  assert.equal(login.data.user.role, "RECEPTION");
 
-  // operational: allowed
-  const members = await call("GET", "/api/members", { token: staffToken });
-  assert.equal(members.status, 200, "staff can view members");
-  const dash = await call("GET", "/api/dashboard", { token: staffToken });
-  assert.equal(dash.status, 200, "staff can see the dashboard");
+  // the desk's own work: seeing members, signing them up, taking money
+  const members = await call("GET", "/api/members", { token: receptionToken });
+  assert.equal(members.status, 200, "reception can view members");
+
+  const admit = await call("POST", "/api/auth/register", {
+    token: receptionToken,
+    body: { name: "Desk Admitted", phone: "9000000077", packageId: "basic-monthly", startDate: "2026-10-01" },
+  });
+  assert.equal(admit.status, 201, "reception signs members up");
+
   const pay = await call("POST", "/api/payments", {
-    token: staffToken,
+    token: receptionToken,
     body: { memberId, amount: 500, method: "cash" },
   });
-  assert.equal(pay.status, 201, "staff can record a payment");
+  assert.equal(pay.status, 201, "reception takes money at the desk");
 });
 
-test("staff cannot do admin-only work", async () => {
-  const deleteMember = await call("DELETE", `/api/members/${otherMemberId}`, { token: staffToken });
+test("a trainer account can be created and can prescribe charts", async () => {
+  const created = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Coach", phone: "9555000006", password: "coach-password-1", role: "TRAINER" },
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.data));
+  trainerId = created.data.staff.id;
+  assert.equal(created.data.staff.role, "TRAINER");
+
+  const login = await call("POST", "/api/auth/login", {
+    body: { phone: "9555000006", password: "coach-password-1" },
+  });
+  assert.equal(login.status, 200);
+  trainerToken = login.data.token;
+  assert.equal(login.data.user.role, "TRAINER");
+
+  const chart = await call("POST", "/api/charts", {
+    token: trainerToken,
+    body: { memberId, type: "diet", content: "Trainer-prescribed plan" },
+  });
+  assert.equal(chart.status, 201, "a trainer assigns charts");
+
+  const templates = await call("GET", "/api/templates", { token: trainerToken });
+  assert.equal(templates.status, 200, "a trainer reads templates to prescribe from");
+
+  const members = await call("GET", "/api/members", { token: trainerToken });
+  assert.equal(members.status, 200, "a trainer sees the members they train");
+
+  // the staff list now spans three roles, so the SELECT has to carry all of them
+  const listed = await call("GET", "/api/staff", { token: adminToken });
+  assert.ok(listed.data.staff.some((s) => s.id === trainerId), "the trainer is in the staff list");
+  assert.ok(listed.data.staff.some((s) => s.role === "RECEPTION"), "reception is in the staff list");
+  assert.ok(listed.data.staff.some((s) => s.role === "TRAINER"), "the trainer role survives the round trip");
+});
+
+test("the desk cannot assign charts, and a trainer cannot run the desk", async () => {
+  const chart = await call("POST", "/api/charts", {
+    token: receptionToken,
+    body: { memberId, type: "workout", content: "Not the desk's job" },
+  });
+  assert.equal(chart.status, 403, "chart assignment is trainer work");
+
+  const templates = await call("GET", "/api/templates", { token: receptionToken });
+  assert.equal(templates.status, 403, "templates are trainer material");
+
+  const admit = await call("POST", "/api/auth/register", {
+    token: trainerToken,
+    body: { name: "Coach Admitted", phone: "9000000078", packageId: "basic-monthly", startDate: "2026-10-01" },
+  });
+  assert.equal(admit.status, 403, "a trainer does not sign members up");
+
+  const pay = await call("POST", "/api/payments", {
+    token: trainerToken, body: { memberId, amount: 10 },
+  });
+  assert.equal(pay.status, 403, "a trainer does not take money");
+
+  const edit = await call("PUT", `/api/members/${memberId}`, {
+    token: trainerToken, body: { weight: 70 },
+  });
+  assert.equal(edit.status, 403, "a trainer does not edit member records");
+});
+
+test("the revenue summary is withheld from non-admins, not merely hidden in the UI", async () => {
+  for (const [who, token] of [["reception", receptionToken], ["trainer", trainerToken]]) {
+    const dash = await call("GET", "/api/dashboard", { token });
+    assert.equal(dash.status, 200, `${who} can still open the dashboard`);
+    assert.ok(!("monthlyRevenue" in dash.data.stats), `${who} must not receive monthlyRevenue`);
+    assert.ok(!("totalRevenue" in dash.data.stats), `${who} must not receive totalRevenue`);
+    // the operational numbers they do need are untouched
+    assert.equal(typeof dash.data.stats.activeMembers, "number");
+  }
+
+  const admin = await call("GET", "/api/dashboard", { token: adminToken });
+  assert.ok("monthlyRevenue" in admin.data.stats, "the owner still sees the revenue");
+  assert.ok("totalRevenue" in admin.data.stats);
+
+  const ledger = await call("GET", "/api/payments", { token: receptionToken });
+  assert.equal(ledger.status, 403, "the payment ledger is the owner's as well");
+});
+
+test("the retired STAFF role can no longer be created", async () => {
+  const res = await call("POST", "/api/staff", {
+    token: adminToken,
+    body: { name: "Nope", phone: "9555000007", password: "longenough1", role: "STAFF" },
+  });
+  assert.equal(res.status, 400, "roles are ADMIN, TRAINER or RECEPTION");
+});
+
+test("reception cannot do admin-only work", async () => {
+  const deleteMember = await call("DELETE", `/api/members/${otherMemberId}`, { token: receptionToken });
   assert.equal(deleteMember.status, 403, "deleting members stays admin-only");
 
   const packageWrite = await call("POST", "/api/packages", {
-    token: staffToken,
+    token: receptionToken,
     body: { name: "Nope", duration: 10, price: 1 },
   });
   assert.equal(packageWrite.status, 403, "package curation stays admin-only");
 
   const staffWrite = await call("POST", "/api/staff", {
-    token: staffToken,
+    token: receptionToken,
     body: { name: "Nope", phone: "9555000009", password: "longenough1" },
   });
   assert.equal(staffWrite.status, 403, "staff cannot create staff");
 
-  const reseed = await call("POST", "/api/admin/reseed", { token: staffToken, body: {} });
+  const reseed = await call("POST", "/api/admin/reseed", { token: receptionToken, body: {} });
   assert.equal(reseed.status, 403, "admin utilities stay admin-only");
 });
 
@@ -641,13 +736,13 @@ test("staff safety rails: no self-deletion, always one admin left", async () => 
   const selfDelete = await call("DELETE", `/api/staff/${myId}`, { token: adminToken });
   assert.equal(selfDelete.status, 400, "an admin must not be able to delete themselves");
 
-  const demoteSelf = await call("PUT", `/api/staff/${myId}`, { token: adminToken, body: { role: "STAFF" } });
+  const demoteSelf = await call("PUT", `/api/staff/${myId}`, { token: adminToken, body: { role: "RECEPTION" } });
   assert.equal(demoteSelf.status, 400, "the last admin must not be demotable");
 
-  const update = await call("PUT", `/api/staff/${staffId}`, { token: adminToken, body: { name: "Front Desk Two" } });
+  const update = await call("PUT", `/api/staff/${receptionId}`, { token: adminToken, body: { name: "Front Desk Two" } });
   assert.equal(update.status, 200);
 
-  const removed = await call("DELETE", `/api/staff/${staffId}`, { token: adminToken });
+  const removed = await call("DELETE", `/api/staff/${receptionId}`, { token: adminToken });
   assert.equal(removed.status, 200);
 
   const gone = await call("POST", "/api/auth/login", {
@@ -665,7 +760,7 @@ test("a second admin can be created and then demoted while an admin remains", as
   const secondId = second.data.staff.id;
 
   // with two admins the demotion is allowed
-  const demote = await call("PUT", `/api/staff/${secondId}`, { token: adminToken, body: { role: "STAFF" } });
+  const demote = await call("PUT", `/api/staff/${secondId}`, { token: adminToken, body: { role: "RECEPTION" } });
   assert.equal(demote.status, 200, "demoting is fine while another admin exists");
 
   // the same rule now blocks demoting the last one again
