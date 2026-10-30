@@ -182,6 +182,99 @@ test("invalid input is rejected with 400", async () => {
   }
 });
 
+/* -------------------------------------- payment dating / revenue attribution -- */
+
+/** First day of the current month in the gym's timezone. */
+function gymFirstOfMonth(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now);
+  const get = (t) => parts.find((p) => p.type === t).value;
+  return `${get("year")}-${get("month")}-01`;
+}
+
+test("a backdated admission is billed to the month it covers, not the month it was keyed in", async () => {
+  // Regression: the admission payment was stamped with "now", so backfilling a member
+  // whose membership had already lapsed pushed their fee into the current month.
+  const before = await call("GET", "/api/dashboard", { token: adminToken });
+
+  const res = await call("POST", "/api/auth/register", {
+    token: adminToken,
+    body: {
+      name: "Backdated Member", phone: "9000000011", packageId: "quarterly",
+      startDate: "2024-03-15",
+    },
+  });
+  assert.equal(res.status, 201);
+
+  const after = await call("GET", "/api/dashboard", { token: adminToken });
+  assert.equal(after.data.stats.monthlyRevenue, before.data.stats.monthlyRevenue,
+    "an expired membership's fee must not appear in this month's revenue");
+  assert.equal(after.data.stats.totalRevenue, before.data.stats.totalRevenue + res.data.member.totalAmount,
+    "the money is still revenue, just not this month's");
+
+  const pays = await call("GET", "/api/payments?limit=500", { token: adminToken });
+  const row = pays.data.payments.find((p) => p.memberId === res.data.member.id);
+  assert.ok(row, "admission wrote a payment row");
+  assert.equal(String(row.date).slice(0, 10), "2024-03-15",
+    "the fee is dated to the membership start, not to registration");
+});
+
+test("an explicit payment date wins over the membership start date", async () => {
+  const res = await call("POST", "/api/auth/register", {
+    token: adminToken,
+    body: {
+      name: "Late Payer", phone: "9000000012", packageId: "quarterly",
+      startDate: "2024-06-01", paymentDate: "2024-07-20",
+    },
+  });
+  assert.equal(res.status, 201);
+  const pays = await call("GET", "/api/payments?limit=500", { token: adminToken });
+  const row = pays.data.payments.find((p) => p.memberId === res.data.member.id);
+  assert.equal(String(row.date).slice(0, 10), "2024-07-20",
+    "cash that arrived after the membership began is dated when it arrived");
+});
+
+test("the revenue month window spans the whole month, not just today", async () => {
+  // Regression: gymDayBounds() served as the "this month" window, so monthlyRevenue
+  // read 0 on every day after the 1st. A fee dated to the 1st of this month has to be
+  // counted whatever today's date is.
+  const before = await call("GET", "/api/dashboard", { token: adminToken });
+  const res = await call("POST", "/api/auth/register", {
+    token: adminToken,
+    body: {
+      name: "Month Window", phone: "9000000013", packageId: "basic-monthly",
+      startDate: gymFirstOfMonth(),
+    },
+  });
+  assert.equal(res.status, 201);
+  const after = await call("GET", "/api/dashboard", { token: adminToken });
+  assert.equal(after.data.stats.monthlyRevenue,
+    before.data.stats.monthlyRevenue + res.data.member.totalAmount,
+    "a fee dated to the 1st of this month belongs to this month");
+});
+
+test("a manual payment can be dated in the past", async () => {
+  // Payments could only ever be stamped "now", so a historical entry landed in the
+  // month it was keyed in rather than the month it was actually paid.
+  const res = await call("POST", "/api/payments", {
+    token: adminToken,
+    body: { memberId, amount: 50, method: "cash", notes: "backfilled", date: "2024-08-05" },
+  });
+  assert.equal(res.status, 201);
+  const pays = await call("GET", "/api/payments?limit=500", { token: adminToken });
+  const row = pays.data.payments.find((p) => p.id === res.data.payment.id);
+  assert.equal(String(row.date).slice(0, 10), "2024-08-05");
+});
+
+test("an unparseable payment date is a 400, not a silently-now payment", async () => {
+  const res = await call("POST", "/api/payments", {
+    token: adminToken,
+    body: { memberId, amount: 10, date: "not-a-date" },
+  });
+  assert.equal(res.status, 400);
+});
+
 test("changing a member's package recomputes endDate and totalAmount", async () => {
   // Without the derived values, switching packages would leave the stored dates and
   // billed amount describing the OLD package.
@@ -215,7 +308,11 @@ test("member list never exposes the password hash", async () => {
   assert.ok(res.data.members.length > 0);
   assert.ok(!("password" in res.data.members[0]));
   assert.ok("uniqueCode" in res.data.members[0], "camelCase field names");
-  assert.equal(res.data.members[0].packageName, "Quarterly");
+  // Look our member up by id: the list is newest-first, so indexing [0] couples this
+  // assertion to whatever other tests happened to create most recently.
+  const mine = res.data.members.find((m) => m.id === memberId);
+  assert.ok(mine, "the admitted member appears in the list");
+  assert.equal(mine.packageName, "Quarterly", "the package join is populated");
 });
 
 /* ---------------------------------------------------------- geofencing ------ */
@@ -434,10 +531,12 @@ test("dashboard reports revenue, membership and attendance", async () => {
   assert.equal(typeof s.activeMembers, "number");
   assert.ok(s.totalRevenue > 0);
   assert.ok("monthlyRevenue" in s);
-  // Every payment in this suite was written today, so the month window must cover it.
-  // (A day-sized window masquerading as a month would report 0 here — a bug this caught.)
-  assert.equal(s.monthlyRevenue, s.totalRevenue,
-    `monthlyRevenue ${s.monthlyRevenue} should equal totalRevenue ${s.totalRevenue}`);
+  // These used to be equal because every payment was stamped "now". They are dated
+  // to the membership period now, so month-to-date is genuinely a subset of all-time.
+  // The window itself is checked by "the revenue month window spans the whole month".
+  assert.equal(typeof s.monthlyRevenue, "number");
+  assert.ok(s.monthlyRevenue >= 0 && s.monthlyRevenue <= s.totalRevenue,
+    `monthlyRevenue ${s.monthlyRevenue} should sit within totalRevenue ${s.totalRevenue}`);
   if (res.data.recentMembers.length) {
     assert.ok("phone" in res.data.recentMembers[0]);
     assert.ok("packageName" in res.data.recentMembers[0]);

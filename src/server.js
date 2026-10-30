@@ -673,9 +673,16 @@ app.post("/api/auth/register", requireStaff, async (req, res) => {
       ]
     );
 
+    // The fee belongs to the month the membership was sold for, not the month the
+    // record happened to be typed in. Stamping today's date here meant that
+    // backfilling a member whose membership had already lapsed still pushed their
+    // fee into the current month's revenue. Default to the start date; paymentDate
+    // overrides it for the genuine case where cash arrived on a different day.
+    const paymentDate = body.paymentDate ? asDate(body.paymentDate, "paymentDate") : start;
+
     await dbRun(
       "INSERT INTO payments (id, memberId, amount, method, notes, date) VALUES (?, ?, ?, ?, ?, ?)",
-      [uuidv4(), id, totalAmount, "admission", `Admission - ${name}`, nowIso()]
+      [uuidv4(), id, totalAmount, "admission", `Admission - ${name}`, paymentDate.toISOString()]
     );
 
     res.status(201).json({
@@ -1528,11 +1535,15 @@ app.post("/api/payments", requireStaff, async (req, res) => {
     if (!member) throw notFound("Member not found");
 
     const amount = asNumber(body.amount, { min: 0, max: 10_000_000, label: "amount" });
+    // Optional: record a payment that was actually received earlier. Without this
+    // every row was stamped "now", so a historical entry landed in the month it
+    // was keyed in rather than the month it was paid.
+    const date = body.date ? asDate(body.date, "date") : new Date();
     const id = uuidv4();
     await dbRun(
       "INSERT INTO payments (id, memberId, amount, method, notes, date) VALUES (?, ?, ?, ?, ?, ?)",
       [id, member.id, amount, body.method ? String(body.method).slice(0, 40) : null,
-        body.notes ? String(body.notes).slice(0, 500) : null, nowIso()]
+        body.notes ? String(body.notes).slice(0, 500) : null, date.toISOString()]
     );
     res.status(201).json({ payment: { id, amount } });
   } catch (err) {

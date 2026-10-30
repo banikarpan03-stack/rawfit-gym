@@ -1014,6 +1014,10 @@ tr:hover td { background: rgba(0,0,0,0.02); }
               <input type="number" id="admExtraDays" value="0" min="0" max="365" placeholder="0" oninput="calcAdmissionPrice()">
             </div>
             <div class="form-group">
+              <label>Payment Date (defaults to start date)</label>
+              <input type="date" id="admPaymentDate">
+            </div>
+            <div class="form-group">
               <label>Member Password (blank = auto-generate)</label>
               <input type="text" id="admPassword" placeholder="Optional" autocomplete="new-password">
             </div>
@@ -2275,6 +2279,8 @@ async function submitAdmission() {
   const startDate = document.getElementById('admStartDate').value;
   const discount = parseInt(document.getElementById('admDiscount').value) || 0;
   const extraDays = parseInt(document.getElementById('admExtraDays').value, 10) || 0;
+  // Blank lets the server date the fee to the membership start date.
+  const paymentDate = document.getElementById('admPaymentDate').value;
 
   if (!name || !phone || !packageId || !startDate) {
     showToast('Please fill required fields (Name, Phone, Package, Start Date)', 'error');
@@ -2284,7 +2290,7 @@ async function submitAdmission() {
   try {
     const password = document.getElementById('admPassword').value;
     const res = await apiCall('POST', '/api/auth/register',
-      { name, phone, email, gender, dob, packageId, startDate, discount, extraDays, password });
+      { name, phone, email, gender, dob, packageId, startDate, discount, extraDays, password, paymentDate });
     showToast('Member admitted successfully!');
     // The server returns a generated password only on this one response.
     const gp = res && res.member && res.member.generatedPassword;
@@ -2305,6 +2311,7 @@ async function submitAdmission() {
     document.getElementById('admGender').value = '';
     document.getElementById('admDob').value = '';
     document.getElementById('admStartDate').value = '';
+    document.getElementById('admPaymentDate').value = '';
     document.getElementById('admEndDate').value = '';
     document.getElementById('admDiscount').value = '0';
     calcAdmissionPrice();
