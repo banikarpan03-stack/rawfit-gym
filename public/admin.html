@@ -1072,7 +1072,7 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     <div id="page-dietTemplates" class="page-content hidden">
       <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
         <h1 class="page-title" style="margin:0;">Diet Templates</h1>
-        <button class="btn btn-success" onclick="openDietTemplateCreator()">+ Create Diet Template</button>
+        <button class="btn btn-success" data-cap="curateLibrary" onclick="openDietTemplateCreator()">+ Create Diet Template</button>
       </div>
       <div class="grid-3" id="dietTemplatesList"></div>
     </div>
@@ -1081,7 +1081,7 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     <div id="page-workoutTemplates" class="page-content hidden">
       <div class="card-header" style="padding:0; border:0; margin-bottom:20px;">
         <h1 class="page-title" style="margin:0;">Workout Templates</h1>
-        <button class="btn btn-info" onclick="openWorkoutTemplateCreator()">+ Create Workout Template</button>
+        <button class="btn btn-info" data-cap="curateLibrary" onclick="openWorkoutTemplateCreator()">+ Create Workout Template</button>
       </div>
       <div class="grid-3" id="workoutTemplatesList"></div>
     </div>
@@ -1345,7 +1345,7 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeMemberModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveMember()">Save</button>
+      <button class="btn btn-primary" data-cap="editMember" onclick="saveMember()">Save</button>
     </div>
   </div>
 </div>
@@ -1507,7 +1507,7 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDietTemplateCreator()">Cancel</button>
-      <button class="btn btn-success" onclick="saveDietTemplate()">Save Template</button>
+      <button class="btn btn-success" data-cap="curateLibrary" onclick="saveDietTemplate()">Save Template</button>
     </div>
   </div>
 </div>
@@ -1552,7 +1552,7 @@ tr:hover td { background: rgba(0,0,0,0.02); }
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeWorkoutTemplateCreator()">Cancel</button>
-      <button class="btn btn-info" onclick="saveWorkoutTemplate()">Save Template</button>
+      <button class="btn btn-info" data-cap="curateLibrary" onclick="saveWorkoutTemplate()">Save Template</button>
     </div>
   </div>
 </div>
@@ -1858,6 +1858,7 @@ function applyRolePermissions() {
     const roles = (el.getAttribute('data-roles') || '').split(',');
     el.classList.toggle('hidden', roles.indexOf(role) === -1);
   });
+  applyCapabilities();
   if (!canOpen(state.currentPage)) navigateTo('dashboard');
 }
 
@@ -2032,6 +2033,27 @@ function roleOf() {
 function canOpen(page) {
   const roles = PAGE_ROLES[page];
   return !roles || roles.indexOf(roleOf()) !== -1;
+}
+
+/** Does this role hold the capability? The list comes from the server on login. */
+function can(capability) {
+  const caps = (state.user && state.user.capabilities) || [];
+  return caps.indexOf(capability) !== -1;
+}
+
+/**
+ * Hide the actions this role cannot perform. The server refuses them regardless, but a
+ * button that always fails just teaches staff that the app is broken — and invites them
+ * to keep clicking.
+ *
+ * Static markup opts in with data-cap="<capability>". Buttons built inside a render
+ * function are wrapped in can(...) instead, so that a new list cannot be written without
+ * deciding what each role may do with it — which is exactly how ungated buttons appeared.
+ */
+function applyCapabilities(root) {
+  (root || document).querySelectorAll('[data-cap]').forEach(function (el) {
+    el.classList.toggle('hidden', !can(el.getAttribute('data-cap')));
+  });
 }
 
 function navigateTo(page) {
@@ -2259,9 +2281,9 @@ function renderMembers(members) {
       <td><span class="badge ${active ? 'badge-success' : 'badge-danger'}">${active ? 'Active' : 'Inactive'}</span></td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm btn-info" onclick="viewMember('${jsq(m.id)}')">View</button>
-        <button class="btn btn-sm btn-warning" onclick="openMemberModal('${jsq(m.id)}')">Edit</button>
+        ${can('editMember') ? `<button class="btn btn-sm btn-warning" onclick="openMemberModal('${jsq(m.id)}')">Edit</button>` : ''}
         <button class="btn btn-sm btn-secondary" onclick="notifyMember('${jsq(m.id)}')">Notify</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteMember('${jsq(m.id)}')">Delete</button>
+        ${can('deleteMember') ? `<button class="btn btn-sm btn-danger" onclick="deleteMember('${jsq(m.id)}')">Delete</button>` : ''}
       </td>
     </tr>`;
   }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No members found</td></tr>';
@@ -2700,7 +2722,7 @@ function renderDietTemplates() {
         <span class="badge badge-diet">${esc(totalCal)} kcal</span>
         <span class="badge badge-success">Diet</span>
       </div>
-      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteDietTemplate('${jsq(t.id)}')">Delete</button>
+      ${can('curateLibrary') ? `<button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteDietTemplate('${jsq(t.id)}')">Delete</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -2868,7 +2890,7 @@ function renderWorkoutTemplates() {
         <span class="badge badge-info">${esc(t.difficulty || 'All')}</span>
         <span class="badge badge-workout">${esc((t.exercises || []).length)} exercises</span>
       </div>
-      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteWorkoutTemplate('${jsq(t.id)}')">Delete</button>
+      ${can('curateLibrary') ? `<button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="deleteWorkoutTemplate('${jsq(t.id)}')">Delete</button>` : ''}
     </div>
   `).join('');
 }
@@ -3205,6 +3227,14 @@ document.getElementById('loginPassword').addEventListener('keypress', function(e
   const token = localStorage.getItem('rawfit_token');
   const user = localStorage.getItem('rawfit_user');
   const parsed = safeParse(user, null);
+  // Sessions stored before capabilities were sent to the client have no list. Guessing
+  // one from the role would mean a second copy of the permission table, so send them
+  // through login once — it is a single extra sign-in, and only for existing sessions.
+  if (token && parsed && !Array.isArray(parsed.capabilities)) {
+    localStorage.removeItem('rawfit_token');
+    localStorage.removeItem('rawfit_user');
+    return;
+  }
   if (token && parsed && parsed.id) {
     state.token = token;
     state.user = parsed;

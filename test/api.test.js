@@ -698,6 +698,43 @@ test("the revenue summary is withheld from non-admins, not merely hidden in the 
   assert.equal(ledger.status, 403, "the payment ledger is the owner's as well");
 });
 
+test("login tells the client which capabilities its role holds", async () => {
+  // The UI hides the actions a role cannot perform, using this list. It exists so the
+  // permission table is not written out twice — a duplicate drifts, and the copy that
+  // drifts is the one nobody tests. It must therefore never over-grant.
+  const admin = await call("POST", "/api/auth/login", { body: { phone: "9999999999", password: "admin" } });
+  const adminCaps = admin.data.user.capabilities;
+  assert.ok(adminCaps.includes("seeRevenue"), "the owner sees revenue");
+  assert.ok(adminCaps.includes("manageStaff"), "and manages staff");
+  assert.ok(adminCaps.includes("assignCharts"), "and assigns charts");
+
+  const desk = await call("POST", "/api/auth/login", { body: { phone: "9555000002", password: "desk-password-1" } });
+  const deskCaps = desk.data.user.capabilities;
+  assert.ok(deskCaps.includes("editMember"), "reception edits member records");
+  assert.ok(deskCaps.includes("recordPayment"), "and takes money");
+  assert.ok(!deskCaps.includes("deleteMember"), "but does not delete members");
+  assert.ok(!deskCaps.includes("assignCharts"), "and does not assign charts");
+  assert.ok(!deskCaps.includes("seeRevenue"), "and cannot see revenue");
+
+  const coach = await call("POST", "/api/auth/login", { body: { phone: "9555000006", password: "coach-password-1" } });
+  const coachCaps = coach.data.user.capabilities;
+  assert.ok(coachCaps.includes("assignCharts"), "a trainer assigns charts");
+  assert.ok(!coachCaps.includes("editMember"), "but does not edit member records");
+  assert.ok(!coachCaps.includes("recordPayment"), "and does not take money");
+
+  for (const caps of [deskCaps, coachCaps]) {
+    assert.ok(!caps.includes("manageStaff"), "staff management is never delegated");
+    assert.ok(!caps.includes("curateLibrary"), "nor is the library");
+    assert.ok(!caps.includes("deleteMember"));
+  }
+
+  // a member holds nothing staff-level
+  const member = await call("POST", "/api/auth/login", {
+    body: { phone: "9000000001", password: memberPassword },
+  });
+  assert.deepEqual(member.data.user.capabilities, [], "a member holds no staff capability");
+});
+
 test("the retired STAFF role can no longer be created", async () => {
   const res = await call("POST", "/api/staff", {
     token: adminToken,

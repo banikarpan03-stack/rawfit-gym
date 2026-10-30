@@ -336,6 +336,17 @@ function allow(capability) {
   };
 }
 
+/**
+ * The capability names this role holds, sent to the client on login. The UI hides the
+ * actions a role cannot perform, and it derives that from this list rather than keeping
+ * a second copy of the table: a duplicated permission list drifts, and the half that
+ * drifts is always the one nobody is testing.
+ */
+function capabilitiesFor(role) {
+  const held = String(role);
+  return Object.keys(CAN).filter((capability) => CAN[capability].has(held));
+}
+
 // Checks path params, query string and body — check-in/checkout carry memberId in the
 // body rather than the URL, and a body-blind check would have locked members out.
 // A missing id is a 400 (bad request); a present id that isn't yours is a 403.
@@ -468,7 +479,11 @@ app.post("/api/auth/login", loginIpLimiter, loginLimiter, async (req, res) => {
     const token = await signToken(user);
     res.json({
       token,
-      user: { id: user.id, uniqueCode: user.uniqueCode, name: user.name, phone: user.phone, role: user.role },
+      user: {
+        id: user.id, uniqueCode: user.uniqueCode, name: user.name,
+        phone: user.phone, role: user.role,
+        capabilities: capabilitiesFor(user.role),
+      },
     });
   } catch (err) {
     handleError(res, err, "Login failed");
